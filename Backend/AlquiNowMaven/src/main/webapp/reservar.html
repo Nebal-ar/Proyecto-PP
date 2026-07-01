@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservar — AlquiNow</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
+    <nav class="nav-links">
+      <a href="index.html">Buscar</a>
+      <a href="login.html">Ingresar</a>
+    </nav>
+  </header>
+
+  <main class="contenedor" style="max-width:680px;">
+    <div id="detalle"></div>
+
+    <div class="form-box" style="margin-top:1.5rem; max-width:none;">
+      <h1 style="font-size:1.3rem;">Reservá tu estadía</h1>
+      <p class="sub">Elegí las fechas y confirmá.</p>
+      <div id="msg"></div>
+
+      <label for="fechaInicio">Desde</label>
+      <input type="date" id="fechaInicio">
+
+      <label for="fechaFinal">Hasta</label>
+      <input type="date" id="fechaFinal">
+
+      <button class="btn btn-block" onclick="reservar()">Confirmar reserva</button>
+    </div>
+  </main>
+
+  <script>
+    const idPropiedad = new URLSearchParams(location.search).get("id");
+
+    // Cargamos el detalle de la propiedad
+    fetch("propiedades?id=" + idPropiedad)
+      .then(r => r.json())
+      .then(p => {
+        if (!p) { document.getElementById("detalle").innerHTML =
+          '<p>Propiedad no encontrada.</p>'; return; }
+        document.getElementById("detalle").innerHTML = `
+          <div class="card"><div class="card-body">
+            <div class="ubic">${p.ciudad}, ${p.provincia}</div>
+            <h1 style="margin:.3rem 0;">${p.calle} ${p.altura || ''}</h1>
+            <div class="precio">$${Number(p.precioPorNoche).toLocaleString('es-AR')}
+              <small>/ noche</small></div>
+            <p style="margin-top:.6rem; color:var(--gris);">${p.descripcion || ''}</p>
+          </div></div>`;
+      });
+
+    function reservar() {
+      const body = new URLSearchParams();
+      body.append("idPropiedad", idPropiedad);
+      body.append("fechaInicio", document.getElementById("fechaInicio").value);
+      body.append("fechaFinal", document.getElementById("fechaFinal").value);
+
+      fetch("reservas", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString()
+      })
+      .then(r => r.json())
+      .then(res => {
+        const msg = document.getElementById("msg");
+        if (res.ok) {
+          msg.innerHTML = `<div class="alerta alerta-ok">
+            ¡Reserva creada! ${res.noches} noches · Total $${Number(res.monto).toLocaleString('es-AR')}</div>`;
+        } else {
+          msg.innerHTML = `<div class="alerta alerta-error">${res.error || 'No se pudo reservar.'}</div>`;
+        }
+      })
+      .catch(() => {
+        document.getElementById("msg").innerHTML =
+          '<div class="alerta alerta-error">Iniciá sesión como huésped para reservar.</div>';
+      });
+    }
+  </script>
+</body>
+</html>

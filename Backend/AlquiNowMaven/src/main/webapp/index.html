@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlquiNow — Alquileres temporales</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="logo">Alqui<span>Now</span></div>
+    <nav class="nav-links">
+      <a href="index.html">Buscar</a>
+      <a href="login.html">Ingresar</a>
+      <a href="registro.html">Crear cuenta</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Tu próxima estadía, <span>a un clic</span></h1>
+    <p>Encontrá departamentos y casas para alquilar por noche en toda Argentina.</p>
+  </section>
+
+  <main class="contenedor">
+
+    <!-- Filtros de búsqueda -->
+    <div class="filtros">
+      <div class="campo">
+        <label for="f-ciudad">Ciudad</label>
+        <input type="text" id="f-ciudad" placeholder="Ej: Neuquén">
+      </div>
+      <div class="campo">
+        <label for="f-provincia">Provincia</label>
+        <select id="f-provincia">
+          <option value="">Todas</option>
+          <option>Buenos Aires</option>
+          <option>CABA</option>
+          <option>Córdoba</option>
+          <option>Mendoza</option>
+          <option>Neuquén</option>
+          <option>Río Negro</option>
+          <option>Santa Fe</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="f-precio">Precio máx / noche</label>
+        <input type="number" id="f-precio" placeholder="$">
+      </div>
+      <div class="campo">
+        <label for="f-personas">Personas (mín)</label>
+        <input type="number" id="f-personas" placeholder="2">
+      </div>
+      <button class="btn" onclick="buscar()">Buscar</button>
+    </div>
+
+    <!-- Resultados -->
+    <div id="resultados" class="grid"></div>
+    <p id="vacio" style="display:none; color:var(--gris); margin-top:2rem;">
+      No encontramos propiedades con esos filtros.
+    </p>
+
+  </main>
+
+  <script src="js/propiedades.js"></script>
+  <script>
+    // Cargar todas las propiedades al abrir la página
+    document.addEventListener("DOMContentLoaded", () => cargarPropiedades());
+  </script>
+</body>
+</html>

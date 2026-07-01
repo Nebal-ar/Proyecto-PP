@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingresar — AlquiNow</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
+    <nav class="nav-links">
+      <a href="index.html">Buscar</a>
+      <a href="registro.html">Crear cuenta</a>
+    </nav>
+  </header>
+
+  <div class="form-box">
+    <h1>Ingresá a tu cuenta</h1>
+    <p class="sub">Bienvenido de nuevo.</p>
+
+    <!-- Mensajes según el querystring -->
+    <div id="msg"></div>
+
+    <!-- El form envía POST al servlet /login -->
+    <form action="login" method="post">
+      <label for="mail">Mail</label>
+      <input type="email" id="mail" name="mail" required>
+
+      <label for="contrasena">Contraseña</label>
+      <input type="password" id="contrasena" name="contrasena" required>
+
+      <button type="submit" class="btn btn-block">Ingresar</button>
+    </form>
+
+    <p style="text-align:center; margin-top:1.2rem; color:var(--gris);">
+      ¿No tenés cuenta? <a href="registro.html" style="color:var(--brasa);">Registrate</a>
+    </p>
+  </div>
+
+  <script>
+    // Mostramos mensajes según parámetros en la URL
+    const params = new URLSearchParams(location.search);
+    const msg = document.getElementById("msg");
+    if (params.get("registrado")) {
+      msg.innerHTML = '<div class="alerta alerta-ok">¡Cuenta creada! Ya podés ingresar.</div>';
+    }
+    if (params.get("required")) {
+      msg.innerHTML = '<div class="alerta alerta-error">Necesitás iniciar sesión para ver esa página.</div>';
+    }
+  </script>
+</body>
+</html>

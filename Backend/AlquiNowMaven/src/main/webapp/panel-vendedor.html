@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel del anfitrión — AlquiNow</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
+    <nav class="nav-links">
+      <a href="index.html">Ver sitio</a>
+      <a href="logout">Salir</a>
+    </nav>
+  </header>
+
+  <main class="contenedor" style="max-width:720px;">
+    <h1 style="margin-bottom:.3rem;">Publicar una propiedad</h1>
+    <p style="color:var(--gris);">Completá los datos y publicala al instante.</p>
+    <div id="msg"></div>
+
+    <div class="form-box" style="max-width:none; margin-top:1rem;">
+      <label>Calle</label>
+      <input type="text" id="calle">
+
+      <label>Altura</label>
+      <input type="number" id="altura">
+
+      <label>Ciudad</label>
+      <input type="text" id="ciudad">
+
+      <label>Provincia</label>
+      <select id="provincia">
+        <option>Buenos Aires</option>
+        <option>CABA</option>
+        <option>Córdoba</option>
+        <option>Mendoza</option>
+        <option>Neuquén</option>
+        <option>Río Negro</option>
+        <option>Santa Fe</option>
+      </select>
+
+      <label>Precio por noche ($)</label>
+      <input type="number" id="precio_por_noche" step="0.01">
+
+      <label>Capacidad (personas)</label>
+      <input type="number" id="cant_personas">
+
+      <label>Metros cuadrados</label>
+      <input type="number" id="metros_cuadrados">
+
+      <label>Descripción</label>
+      <textarea id="descripcion" rows="3"></textarea>
+
+      <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem;">
+        <input type="checkbox" id="disponibilidad_inmediata" style="width:auto;">
+        Disponible de inmediato
+      </label>
+
+      <button class="btn btn-block" onclick="publicar()">Publicar propiedad</button>
+    </div>
+  </main>
+
+  <script>
+    function publicar() {
+      const body = new URLSearchParams();
+      const campos = ["calle","altura","ciudad","provincia","precio_por_noche",
+                      "cant_personas","metros_cuadrados","descripcion"];
+      campos.forEach(c => body.append(c, document.getElementById(c).value));
+      body.append("disponibilidad_inmediata",
+                  document.getElementById("disponibilidad_inmediata").checked);
+
+      fetch("propiedades", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString()
+      })
+      .then(r => r.json())
+      .then(res => {
+        const msg = document.getElementById("msg");
+        if (res.ok) {
+          msg.innerHTML = '<div class="alerta alerta-ok">¡Propiedad publicada!</div>';
+        } else {
+          msg.innerHTML = `<div class="alerta alerta-error">${res.error || 'Error al publicar.'}</div>`;
+        }
+      })
+      .catch(() => {
+        document.getElementById("msg").innerHTML =
+          '<div class="alerta alerta-error">Iniciá sesión como anfitrión.</div>';
+      });
+    }
+  </script>
+</body>
+</html>

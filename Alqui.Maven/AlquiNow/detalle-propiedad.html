@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Departamento Céntrico - AlquiNow</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">AlquiNow</a>
+        <nav>
+            <a href="index.html" class="nav-btn">Buscar</a>
+            <a href="panel-vendedor.html" class="nav-btn">Publicar</a>
+            <a href="reservar.html" class="nav-btn">Mis Reservas</a>
+            <a href="registro.html" class="nav-btn">Mi Perfil</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="section active">
+            <!-- Encabezado de la propiedad -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <h2 style="border: none; margin-bottom: 0.3rem;">Departamento Céntrico (Piso 3)</h2>
+                    <p style="color: #666; font-size: 0.95rem;">📍 Bahía Blanca, Buenos Aires • Av. Alem 1234</p>
+                </div>
+                <button class="btn btn-secondary" onclick="alert('Guardado en favoritos')">❤️ Guardar en Deseos</button>
+            </div>
+
+            <!-- Galería de imágenes principales -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <img src="https://via.placeholder.com/600x400?text=Vista+Principal" alt="Foto principal" style="width:100%; height:300px; object-fit:cover; border-radius:8px;">
+                <img src="https://via.placeholder.com/600x400?text=Habitacion" alt="Habitación" style="width:100%; height:300px; object-fit:cover; border-radius:8px;">
+            </div>
+
+            <!-- Detalles y Formulario de Reserva -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                
+                <!-- Columna Izquierda: Información -->
+                <div>
+                    <h3>Características</h3>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; background: var(--light); padding: 1rem; border-radius: 6px;">
+                        <span>👤 <strong>2</strong> personas</span>
+                        <span>📐 <strong>50 m²</strong></span>
+                        <span>🛏️ <strong>1</strong> dormitorio</span>
+                        <span>🌙 Estadía mín: <strong>2 noches</strong></span>
+                    </div>
+
+                    <h3>Descripción</h3>
+                    <p style="line-height: 1.6; color: #444; margin-bottom: 1.5rem;">
+                        Excelente departamento ubicado en el corazón del centro de Bahía Blanca. Cuenta con conexión Wi-Fi de alta velocidad, aire acondicionado frío/calor, cocina totalmente equipada, balcón a la calle y servicio de ropa de blanco incluido.
+                    </p>
+
+                    <h3>Servicios incluidos</h3>
+                    <ul style="list-style-type: square; padding-left: 1.2rem; line-height: 1.8; color: #444;">
+                        <li>Wi-Fi de alta velocidad</li>
+                        <li>Aire acondicionado</li>
+                        <li>Cocina / Heladera con Freezer</li>
+                        <li>Televisión por cable / Smart TV</li>
+                    </ul>
+                </div>
+
+                <!-- Columna Derecha: Tarjeta de Contratación / Reserva -->
+                <div style="background: var(--light); padding: 1.5rem; border-radius: 8px; border: 1px solid #ddd; height: fit-content;">
+                    <p class="price" style="font-size: 1.5rem; margin-top:0;">$25,000 ARS <span style="font-size: 0.9rem; color: #666;">/ noche</span></p>
+                    
+                    <form action="reservas" method="post" style="margin-top: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0.8rem;">
+                            <label for="fecha_ingreso">Fecha de Check-in</label>
+                            <input type="date" id="fecha_ingreso" name="fecha_ingreso" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.8rem;">
+                            <label for="fecha_egreso">Fecha de Check-out</label>
+                            <input type="date" id="fecha_egreso" name="fecha_egreso" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label for="cant_huespedes">Huéspedes</label>
+                            <input type="number" id="cant_huespedes" name="cant_huespedes" min="1" max="2" value="2" required>
+                        </div>
+
+                        <a href="reservar.html" class="btn" style="display: block; text-align: center; text-decoration: none; width: 100%;">Solicitar Reserva</a>
+                    </form>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>AlquiNow - Sistema de Alquileres Temporales</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

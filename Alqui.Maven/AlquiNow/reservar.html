@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Reservas - AlquiNow</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<header>
+    <a href="./index.html" class="logo">AlquiNow</a>
+    <nav>
+        <a href="./index.html" class="nav-btn active">Buscar</a>
+        <a href="./panel-vendedor.html" class="nav-btn">Publicar</a>
+        <a href="./reservar.html" class="nav-btn">Mis Reservas</a>
+        <a href="./registro.html" class="nav-btn">Mi Perfil</a>
+    </nav>
+</header>
+
+    <main>
+        <section class="section active">
+            <h2>Gestión de Reservas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Reserva</th>
+                        <th>Propiedad</th>
+                        <th>Fechas</th>
+                        <th>Monto Total</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-reservas">
+                    <tr>
+                        <td>#RES-101</td>
+                        <td>Departamento Céntrico</td>
+                        <td>20/10/2026 - 25/10/2026</td>
+                        <td>$125,000.00</td>
+                        <td><span class="badge badge-pending">Pendiente Pago</span></td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="showSenaModal('#RES-101')">Registrar Seña</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div id="sena-box" style="display:none; margin-top: 2rem; background: var(--light); padding: 1.5rem; border-radius: 8px;">
+                <h3 id="sena-title" style="margin-top:0;">Registrar Pago de Seña</h3>
+                <form id="sena-form" action="reservas" method="post">
+                    <input type="hidden" id="reserva-id-hidden" name="id_reserva">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="monto_sena">Monto ($)</label>
+                            <input type="number" id="monto_sena" name="monto" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fecha_pago">Fecha de Pago</label>
+                            <input type="date" id="fecha_pago" name="fecha_pago" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="metodo_pago">Método de Pago</label>
+                            <select id="metodo_pago" name="metodo_pago" required>
+                                <option>Transferencia (CBU/CVU)</option>
+                                <option>Efectivo</option>
+                                <option>Tarjeta de Crédito</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" style="margin-top: 1rem;">Guardar Seña</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>AlquiNow - Sistema de Alquileres Temporales</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

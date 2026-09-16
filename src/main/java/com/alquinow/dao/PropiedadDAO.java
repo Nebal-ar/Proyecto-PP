@@ -19,13 +19,14 @@ public class PropiedadDAO {
 
     /** Inserta una propiedad nueva y devuelve su ID generado. */
     public int crear(Propiedad p) throws SQLException {
+        // CORRECCIÓN: Se eliminó "disponibilidad_inmediata" para que los "?" coincidan exactos
         String sql =
             "INSERT INTO Propiedad "
             + "(ID_vendedor_fk, estadia_minima, calle, altura, codigo_postal, "
             + " ciudad, provincia, pais, precio_por_noche, metros_cuadrados, "
-            + " cant_personas, piso, descripcion, disponibilidad_inmediata, "
-            + " dias_cancelacion_sin_penalizacion) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            + " cant_personas, piso, descripcion, dias_cancelacion_sin_penalizacion, "
+            + " estado_verificacion, comprobante_titularidad, foto_verificacion) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)";
 
         try (Connection con = Conexion.getConexion();
              PreparedStatement ps = con.prepareStatement(
@@ -42,9 +43,13 @@ public class PropiedadDAO {
             ps.setBigDecimal(9, p.getPrecioPorNoche());
             setIntOrNull(ps, 10, p.getMetrosCuadrados());
             setIntOrNull(ps, 11, p.getCantPersonas());
-            ps.setString(12, p.getPiso());;
+            ps.setString(12, p.getPiso());
             ps.setString(13, p.getDescripcion());
             setIntOrNull(ps, 14, p.getDiasCancelacionSinPenalizacion());
+            
+            // Los archivos ahora coinciden perfecto con el número 15 y 16
+            ps.setString(15, p.getComprobanteTitularidad());
+            ps.setString(16, p.getFotoVerificacion());
 
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -56,14 +61,14 @@ public class PropiedadDAO {
         return -1;
     }
 
-    /** Lista todas las propiedades. */
-public List<Propiedad> listarTodas() throws SQLException {
-    String sql = "SELECT p.*, " +
-                 "(SELECT ROUND(AVG(puntuacion), 1) FROM resena r WHERE r.id_propiedad_fk = p.ID_propiedad) AS promedio " +
-                 "FROM Propiedad p ORDER BY p.ID_propiedad DESC";
-    
-    return ejecutarConsulta(sql, new Object[]{});
-}
+    /** Lista todas las propiedades APROBADAS (Catálogo principal). */
+    public List<Propiedad> listarTodas() throws SQLException {
+        String sql = "SELECT p.*, " +
+                     "(SELECT ROUND(AVG(puntuacion), 1) FROM resena r WHERE r.id_propiedad_fk = p.ID_propiedad) AS promedio " +
+                     "FROM Propiedad p WHERE p.estado_verificacion = 'aprobada' ORDER BY p.ID_propiedad DESC";
+        
+        return ejecutarConsulta(sql, new Object[]{});
+    }
 
     /** Lista las propiedades de un vendedor concreto. */
     public List<Propiedad> listarPorVendedor(int idVendedor) throws SQLException {
@@ -80,55 +85,48 @@ public List<Propiedad> listarTodas() throws SQLException {
         return lista.isEmpty() ? null : lista.get(0);
     }
 
-    /**
-     * Búsqueda con filtros opcionales. Cualquier parámetro puede venir null
-     * (o <= 0 para los numéricos) y simplemente no se aplica.
-     */
-   /**
- * Búsqueda con filtros opcionales.
- */
-public List<Propiedad> buscar(String ciudad, String provincia,
-                              Integer precioMax, Integer personasMin) throws SQLException {
-    
-    // Agregamos la subconsulta del promedio a la consulta base
-    String sqlBase = "SELECT p.*, " +
-                     "(SELECT ROUND(AVG(calificacion), 1) FROM resena r WHERE r.id_propiedad_fk = p.ID_propiedad) AS promedio " +
-                     "FROM Propiedad p WHERE 1=1";
-                     
-    StringBuilder sql = new StringBuilder(sqlBase);
-    List<Object> params = new ArrayList<>();
+    /** Búsqueda con filtros opcionales (Solo propiedades APROBADAS). */
+    public List<Propiedad> buscar(String ciudad, String provincia,
+                                  Integer precioMax, Integer personasMin) throws SQLException {
+        
+        String sqlBase = "SELECT p.*, " +
+                         "(SELECT ROUND(AVG(calificacion), 1) FROM resena r WHERE r.id_propiedad_fk = p.ID_propiedad) AS promedio " +
+                         "FROM Propiedad p WHERE p.estado_verificacion = 'aprobada'";
+                         
+        StringBuilder sql = new StringBuilder(sqlBase);
+        List<Object> params = new ArrayList<>();
 
-    if (ciudad != null && !ciudad.isBlank()) {
-        sql.append(" AND p.ciudad LIKE ?");
-        params.add("%" + ciudad + "%");
+        if (ciudad != null && !ciudad.isBlank()) {
+            sql.append(" AND p.ciudad LIKE ?");
+            params.add("%" + ciudad + "%");
+        }
+        
+        if (provincia != null && !provincia.isBlank()) {
+            sql.append(" AND p.provincia = ?");
+            params.add(provincia);
+        }
+        
+        if (precioMax != null && precioMax > 0) {
+            sql.append(" AND p.precio_por_noche <= ?");
+            params.add(precioMax);
+        }
+        
+        if (personasMin != null && personasMin > 0) {
+            sql.append(" AND p.cant_personas >= ?"); 
+            params.add(personasMin);
+        }
+        
+        return ejecutarConsulta(sql.toString(), params.toArray());
     }
-    
-    if (provincia != null && !provincia.isBlank()) {
-        sql.append(" AND p.provincia = ?");
-        params.add(provincia);
-    }
-    
-    if (precioMax != null && precioMax > 0) {
-        sql.append(" AND p.precio_por_noche <= ?");
-        params.add(precioMax);
-    }
-    
-    if (personasMin != null && personasMin > 0) {
-        // Asumiendo que tu columna se llama cant_personas
-        sql.append(" AND p.cant_personas >= ?"); 
-        params.add(personasMin);
-    }
-    
-    return ejecutarConsulta(sql.toString(), params.toArray());
-}
 
     /** Actualiza una propiedad existente. */
     public boolean actualizar(Propiedad p) throws SQLException {
+        // CORRECCIÓN: Acá también borramos "disponibilidad_inmediata"
         String sql =
             "UPDATE Propiedad SET estadia_minima=?, calle=?, altura=?, "
             + "codigo_postal=?, ciudad=?, provincia=?, pais=?, precio_por_noche=?, "
             + "metros_cuadrados=?, cant_personas=?, piso=?, descripcion=?, "
-            + "disponibilidad_inmediata=?, dias_cancelacion_sin_penalizacion=? "
+            + "dias_cancelacion_sin_penalizacion=? "
             + "WHERE ID_propiedad=?";
 
         try (Connection con = Conexion.getConexion();
@@ -165,7 +163,6 @@ public List<Propiedad> buscar(String ciudad, String provincia,
 
     // ---------- Helpers privados ----------
 
-    /** Ejecuta una consulta SELECT con parámetros y mapea el resultado. */
     private List<Propiedad> ejecutarConsulta(String sql, Object[] params)
             throws SQLException {
         List<Propiedad> lista = new ArrayList<>();
@@ -184,7 +181,6 @@ public List<Propiedad> buscar(String ciudad, String provincia,
         return lista;
     }
 
-    /** Setea un Integer que puede ser null en un PreparedStatement. */
     private void setIntOrNull(PreparedStatement ps, int idx, Integer valor)
             throws SQLException {
         if (valor == null) {
@@ -194,7 +190,6 @@ public List<Propiedad> buscar(String ciudad, String provincia,
         }
     }
 
-    /** Convierte una fila en objeto Propiedad. */
     private Propiedad mapear(ResultSet rs) throws SQLException {
         Propiedad p = new Propiedad();
         p.setIdPropiedad(rs.getInt("ID_propiedad"));
@@ -211,9 +206,21 @@ public List<Propiedad> buscar(String ciudad, String provincia,
         p.setCantPersonas(rs.getInt("cant_personas"));
         p.setPiso(rs.getString("piso"));
         p.setDescripcion(rs.getString("descripcion"));
-        p.setPromedioEstrellas(rs.getDouble("promedio"));
-        p.setDiasCancelacionSinPenalizacion(
-                rs.getInt("dias_cancelacion_sin_penalizacion"));
+        
+        try {
+            p.setPromedioEstrellas(rs.getDouble("promedio"));
+        } catch (SQLException e) {
+            p.setPromedioEstrellas(0.0);
+        }
+        
+        p.setDiasCancelacionSinPenalizacion(rs.getInt("dias_cancelacion_sin_penalizacion"));
+        
+        // Mapeamos los campos de seguridad
+        p.setEstadoVerificacion(rs.getString("estado_verificacion"));
+        p.setComprobanteTitularidad(rs.getString("comprobante_titularidad"));
+        p.setFotoVerificacion(rs.getString("foto_verificacion"));
+        p.setMotivoRechazo(rs.getString("motivo_rechazo"));
+        
         return p;
     }
     
@@ -226,10 +233,8 @@ public List<Propiedad> buscar(String ciudad, String provincia,
             sql += " AND (piso IS NULL OR piso = '')";
         }
         
-        // 1. Pedimos la conexión AFUERA del try para que Java NO la cierre al terminar
         Connection con = Conexion.getConexion(); 
         
-        // 2. Solo metemos el PreparedStatement en el try
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, calle);
             ps.setInt(2, altura);
@@ -245,8 +250,7 @@ public List<Propiedad> buscar(String ciudad, String provincia,
                 }
             }
         }
-        // Retorna falso si no hay duplicados y deja la conexión viva para el método crear()
         return false;
     }
-    }
+}
 

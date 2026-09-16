@@ -5,31 +5,32 @@ import com.alquinow.modelo.Propiedad;
 import com.alquinow.modelo.Usuario;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
  * Servlet REST-like para propiedades. Devuelve JSON para que el frontend
  * HTML5 (con fetch/JS) lo consuma.
- *
- *  GET  /propiedades                 -> lista todas (o filtra por querystring)
- *  GET  /propiedades?id=5            -> una propiedad
- *  GET  /propiedades?ciudad=...&precioMax=...&personasMin=...
- *  POST /propiedades                 -> crea (requiere sesión de vendedor)
- *  POST /propiedades?accion=eliminar&id=5
- *
- * Para no depender de librerías externas, el JSON se arma a mano con un
- * pequeño helper. En un proyecto real usarías Jackson o Gson.
  */
 @WebServlet("/propiedades")
+// MODIFICACIÓN 1: Esta etiqueta es OBLIGATORIA para poder recibir archivos en POST
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 2,  // 2 MB
+    maxFileSize = 1024 * 1024 * 50,       // 50 MB
+    maxRequestSize = 1024 * 1024 * 100    // 100 MB
+)
 public class PropiedadServlet extends HttpServlet {
 
     private final PropiedadDAO propiedadDAO = new PropiedadDAO();
@@ -49,7 +50,6 @@ public class PropiedadServlet extends HttpServlet {
                 return;
             }
 
-            // ¿Hay filtros?
             String ciudad = req.getParameter("ciudad");
             String provincia = req.getParameter("provincia");
             Integer precioMax = parseEntero(req.getParameter("precioMax"));
@@ -79,11 +79,9 @@ public class PropiedadServlet extends HttpServlet {
         resp.setContentType("application/json; charset=UTF-8");
         PrintWriter out = resp.getWriter();
 
-        // Solo vendedores logueados pueden crear/eliminar
         HttpSession sesion = req.getSession(false);
         Usuario u = (sesion == null) ? null : (Usuario) sesion.getAttribute("usuario");
         
-        // ACÁ ESTÁ LA MAGIA CORREGIDA:
         if (u == null || !u.isVendedor()) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             out.print("{\"error\":\"Necesitás iniciar sesión como vendedor.\"}");
@@ -100,7 +98,35 @@ public class PropiedadServlet extends HttpServlet {
                 return;
             }
 
-            // Crear propiedad
+            // --- INICIO DE LÓGICA DE SUBIDA DE ARCHIVOS ---
+            // 1. Creamos la carpeta "uploads" dentro del servidor si no existe
+            String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+
+            // 2. Procesamos el archivo "comprobante"
+            Part partComprobante = req.getPart("comprobante");
+            String nombreComprobante = null;
+            if (partComprobante != null && partComprobante.getSize() > 0) {
+                String fileName = Paths.get(partComprobante.getSubmittedFileName()).getFileName().toString();
+                // Le agregamos la fecha en milisegundos para que el nombre sea único (ej: 1691234567_comp_factura.pdf)
+                nombreComprobante = System.currentTimeMillis() + "_comp_" + fileName;
+                partComprobante.write(uploadPath + File.separator + nombreComprobante);
+            }
+
+            // 3. Procesamos el archivo "foto_verificacion"
+            Part partFoto = req.getPart("foto_verificacion");
+            String nombreFoto = null;
+            if (partFoto != null && partFoto.getSize() > 0) {
+                String fileName = Paths.get(partFoto.getSubmittedFileName()).getFileName().toString();
+                nombreFoto = System.currentTimeMillis() + "_foto_" + fileName;
+                partFoto.write(uploadPath + File.separator + nombreFoto);
+            }
+            // --- FIN DE LÓGICA DE ARCHIVOS ---
+
+            // Crear propiedad con los datos de texto
             Propiedad p = new Propiedad();
             p.setIdVendedorFk(u.getIdUsuario());
             p.setCalle(req.getParameter("calle"));
@@ -116,37 +142,39 @@ public class PropiedadServlet extends HttpServlet {
             p.setDescripcion(req.getParameter("descripcion"));
             p.setDiasCancelacionSinPenalizacion(
                     parseEntero(req.getParameter("dias_cancelacion_sin_penalizacion")));
+            
             String precio = req.getParameter("precio_por_noche");
             if (precio != null && !precio.isBlank()) {
                 p.setPrecioPorNoche(new BigDecimal(precio));
             }
             
-            // 1. Leemos el piso como texto directamente del parámetro
-        String pisoTexto = req.getParameter("piso");
-
-        // 2. Verificamos si ya existe en la base de datos
-        boolean yaExiste = propiedadDAO.existePropiedad(
-            p.getCalle(), 
-            p.getAltura(), 
-            p.getCiudad(), 
-            pisoTexto
-        );
-
-        // 3. Si existe, devolvemos un error al frontend y cortamos la ejecución
-        if (yaExiste) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // Código de error 400
-            out.print("{\"ok\":false, \"mensaje\":\"Error: Ya existe una propiedad en esa dirección exacta.\"}");
-            return; // Evita que siga bajando y llegue al DAO.crear(p)
-        }
+            // Le pasamos los nombres de los archivos generados al objeto Propiedad
+            p.setComprobanteTitularidad(nombreComprobante);
+            p.setFotoVerificacion(nombreFoto);
             
-        int id = propiedadDAO.crear(p);
+            String pisoTexto = req.getParameter("piso");
+
+            boolean yaExiste = propiedadDAO.existePropiedad(
+                p.getCalle(), 
+                p.getAltura(), 
+                p.getCiudad(), 
+                pisoTexto
+            );
+
+            if (yaExiste) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); 
+                out.print("{\"ok\":false, \"mensaje\":\"Error: Ya existe una propiedad en esa dirección exacta.\"}");
+                return; 
+            }
+            
+            int id = propiedadDAO.crear(p);
             out.print("{\"ok\":" + (id > 0) + ",\"id\":" + id + "}");
 
         } catch (Exception e) {
-    e.printStackTrace(); // <--- Agregamos esto para ver el error real en la consola
-    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    out.print("{\"error\":\"" + escapar(e.getMessage()) + "\"}");
-}
+            e.printStackTrace(); 
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.print("{\"error\":\"Error al subir archivos: Verificá que la imagen no sea muy pesada\"}");
+        }
     }
 
     // ---------- Helpers de parseo ----------
@@ -166,7 +194,7 @@ public class PropiedadServlet extends HttpServlet {
         return s != null && !s.isBlank();
     }
 
-    // ---------- Helpers de JSON (armado manual) ----------
+    // ---------- Helpers de JSON ----------
 
     private String listaAJson(List<Propiedad> lista) {
         StringBuilder sb = new StringBuilder("[");
@@ -179,9 +207,12 @@ public class PropiedadServlet extends HttpServlet {
         return sb.append("]").toString();
     }
 
-   private String propiedadAJson(Propiedad p) {
+    private String propiedadAJson(Propiedad p) {
+        // MODIFICACIÓN: Agregamos el estadoVerificacion y motivoRechazo al JSON para que JavaScript los lea
+        String estadoV = p.getEstadoVerificacion() != null ? p.getEstadoVerificacion() : "pendiente";
+        
         return "{"
-            + "\"id\":" + p.getIdPropiedad() + ","
+            + "\"idPropiedad\":" + p.getIdPropiedad() + ","
             + "\"idVendedor\":" + p.getIdVendedorFk() + ","
             + "\"calle\":\"" + escapar(p.getCalle()) + "\","
             + "\"altura\":" + p.getAltura() + ","
@@ -193,11 +224,12 @@ public class PropiedadServlet extends HttpServlet {
             + "\"cantPersonas\":" + p.getCantPersonas() + ","
             + "\"piso\":\"" + escapar(p.getPiso()) + "\","
             + "\"descripcion\":\"" + escapar(p.getDescripcion()) + "\","
-            + "\"promedioEstrellas\":" + (p.getPromedioEstrellas() != null ? p.getPromedioEstrellas() : 0.0)
+            + "\"promedioEstrellas\":" + (p.getPromedioEstrellas() != null ? p.getPromedioEstrellas() : 0.0) + ","
+            + "\"estadoVerificacion\":\"" + escapar(estadoV) + "\","
+            + "\"motivoRechazo\":\"" + escapar(p.getMotivoRechazo()) + "\""
             + "}";
     }
 
-    /** Escapa comillas y saltos de línea para no romper el JSON. */
     private String escapar(String s) {
         if (s == null) {
             return "";

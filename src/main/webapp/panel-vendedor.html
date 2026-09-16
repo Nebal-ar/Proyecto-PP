@@ -19,15 +19,30 @@
     <p style="color:var(--gris);">Completá los datos y publicala al instante.</p>
     <div id="msg"></div>
 
-    <div class="form-box" style="max-width:none; margin-top:1rem;">
+    <form id="formPublicar" class="form-box" style="max-width:none; margin-top:1rem;" onsubmit="event.preventDefault(); publicar();">
+      
+      <!-- SECCIÓN SEGURIDAD (NUEVO) -->
+      <h3 style="margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Seguridad y Verificación</h3>
+      <p style="font-size: 0.85rem; color: var(--gris); margin-bottom: 1rem;">
+        Para evitar fraudes, todas las propiedades deben ser verificadas por un administrador antes de aparecer en el catálogo.
+      </p>
+
+      <label>1. Comprobante de titularidad (Impuesto, servicio o escritura)</label>
+      <input type="file" id="comprobante" name="comprobante" accept="image/*, application/pdf" required style="margin-bottom: 1rem;">
+
+      <label>2. Foto de verificación en tiempo real (Foto del lugar con un cartel que tenga la fecha de hoy)</label>
+      <input type="file" id="foto_verificacion" name="foto_verificacion" accept="image/*" required style="margin-bottom: 2rem;">
+
+      <h3 style="margin-bottom: 1rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Datos de la propiedad</h3>
+
       <label>Calle</label>
-      <input type="text" id="calle">
+      <input type="text" id="calle" name="calle" required>
 
       <label>Altura</label>
-      <input type="number" id="altura" name="altura" min="1" step="1" placeholder="Ej: 542">
+      <input type="number" id="altura" name="altura" min="1" step="1" placeholder="Ej: 542" required>
 
       <label>Ciudad</label>
-      <input type="text" id="ciudad">
+      <input type="text" id="ciudad" name="ciudad" required>
       
       <!-- Input oculto de piso -->
       <input type="hidden" id="piso" name="piso" value="">
@@ -39,13 +54,13 @@
       </label>
 
       <!-- Contenedor desplegable -->
-<div id="caja_departamento" style="display:none; padding: 15px; background-color: #f1f1f1; border-radius: 5px; margin-bottom: 1rem;">
-    <label style="margin-top: 0;">Piso</label>
-    <input type="text" id="piso_input" onkeyup="actualizarPiso()" placeholder="Ej: 3 o PB" style="margin-bottom: 10px;">
-    
-    <label>Departamento</label>
-    <input type="text" id="depto_input" onkeyup="actualizarPiso()" placeholder="Ej: B, 4 o 303">
-</div>
+      <div id="caja_departamento" style="display:none; padding: 15px; background-color: #f1f1f1; border-radius: 5px; margin-bottom: 1rem;">
+          <label style="margin-top: 0;">Piso</label>
+          <input type="text" id="piso_input" onkeyup="actualizarPiso()" placeholder="Ej: 3 o PB" style="margin-bottom: 10px;">
+          
+          <label>Departamento</label>
+          <input type="text" id="depto_input" onkeyup="actualizarPiso()" placeholder="Ej: B, 4 o 303">
+      </div>
 
       <label>Provincia</label>
       <select name="provincia" id="provincia" required>
@@ -77,19 +92,20 @@
       </select>
 
       <label>Precio por noche ($)</label>
-      <input type="number" id="precio_por_noche" name="precio_por_noche" min="1" step="1" placeholder="Ej: 70000">
+      <input type="number" id="precio_por_noche" name="precio_por_noche" min="1" step="1" placeholder="Ej: 70000" required>
 
       <label>Capacidad (personas)</label>
-      <input type="number" id="cant_personas" name="cant_personas" min="1" step="1" placeholder="Ej: 4">
+      <input type="number" id="cant_personas" name="cant_personas" min="1" step="1" placeholder="Ej: 4" required>
 
       <label>Metros cuadrados</label>
-      <input type="number" id="metros_cuadrados" name="metros_cuadrados" min="1" step="1" placeholder="Ej: 50">
+      <input type="number" id="metros_cuadrados" name="metros_cuadrados" min="1" step="1" placeholder="Ej: 50" required>
 
       <label>Descripción</label>
-      <textarea id="descripcion" rows="3"></textarea>
+      <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
 
-      <button class="btn btn-block" onclick="publicar()">Publicar propiedad</button>
-    </div>
+      <!-- Cambiamos a submit para que aplique la validación del HTML5 -->
+      <button type="submit" class="btn btn-block">Enviar para verificación</button>
+    </form>
 
     <!-- SECCIÓN NUEVA: MIS ANUNCIOS ACTIVOS -->
     <section style="margin-top: 3rem;">
@@ -129,48 +145,31 @@
     }
 
     function publicar() {
-      const body = new URLSearchParams();
-      // ACÁ SE AGREGÓ "piso" PARA QUE VIAJE AL SERVIDOR
-      const campos = ["calle","altura","ciudad","piso","provincia","precio_por_noche",
-                      "cant_personas","metros_cuadrados","descripcion"];
-      campos.forEach(c => body.append(c, document.getElementById(c).value));
+      // Usamos FormData para empaquetar los archivos e inputs
+      const formElement = document.getElementById("formPublicar");
+      const formData = new FormData(formElement);
+
+      const msg = document.getElementById("msg");
+      msg.innerHTML = '<div class="alerta" style="background-color: #e2e3e5; color: #383d41;">Subiendo archivos y datos... por favor esperá.</div>';
 
       fetch("propiedades", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString()
+        body: formData // No seteamos Content-Type, fetch lo hace solo para multipart/form-data
       })
       .then(r => r.json())
       .then(res => {
-        const msg = document.getElementById("msg");
         if (res.ok) {
-          msg.innerHTML = '<div class="alerta alerta-ok">¡Propiedad publicada!</div>';
-          
-          // Limpia todas las cajitas
-          document.getElementById('calle').value = '';
-          document.getElementById('altura').value = '';
-          document.getElementById('ciudad').value = '';
-          document.getElementById('piso_input').value = '';
-          document.getElementById('depto_input').value = '';
-          document.getElementById('piso').value = '';
-          document.getElementById('es_edificio').checked = false;
-          actualizarPiso(); // Oculta la caja de nuevo
-          document.getElementById('provincia').value = '';
-          document.getElementById('precio_por_noche').value = '';
-          document.getElementById('cant_personas').value = '';
-          document.getElementById('metros_cuadrados').value = '';
-          document.getElementById('descripcion').value = '';
-          document.getElementById('disponibilidad_inmediata').checked = false;
-
-          cargarMisPropiedades(); // Refresca la lista de abajo automáticamente
+          msg.innerHTML = '<div class="alerta alerta-ok">¡Propiedad enviada! Un administrador la revisará a la brevedad.</div>';
+          formElement.reset(); 
+          actualizarPiso(); 
+          cargarMisPropiedades(); 
         } else {
-          // Te muestra el mensaje que programamos en PropiedadServlet (Error: Ya existe...)
           msg.innerHTML = `<div class="alerta alerta-error">${res.mensaje || res.error || 'Error al publicar.'}</div>`;
         }
       })
       .catch(() => {
         document.getElementById("msg").innerHTML =
-          '<div class="alerta alerta-error">Error de conexión o de servidor.</div>';
+          '<div class="alerta alerta-error">Error de conexión o archivo demasiado pesado.</div>';
       });
     }
 
@@ -189,7 +188,7 @@
             .then(res => res.json())
             .then(propiedades => {
               const contenedor = document.getElementById("mis-publicaciones");
-              const misProps = propiedades.filter(p => p.idVendedor === miId);
+              const misProps = propiedades.filter(p => p.idVendedor === miId || p.idVendedorFk === miId);
 
               if (misProps.length === 0) {
                 contenedor.innerHTML = '<p style="color: var(--gris);">Todavía no publicaste ninguna propiedad.</p>';
@@ -199,10 +198,27 @@
               contenedor.innerHTML = '';
 
               misProps.forEach(prop => {
-                // ACÁ AGREGUÉ EL PISO PARA QUE SE VEA EN LA TARJETITA
                 let extraPiso = "";
                 if (prop.piso && prop.piso.trim() !== "" && prop.piso !== "0") {
                     extraPiso = ` - ${prop.piso}`;
+                }
+                
+                // Lógica de la etiqueta de estado
+                let estadoBadge = "";
+                let estadoTexto = prop.estadoVerificacion || 'pendiente';
+                
+                if (estadoTexto === 'aprobada') {
+                    estadoBadge = '<span style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 10px;">Aprobada</span>';
+                } else if (estadoTexto === 'rechazada') {
+                    estadoBadge = '<span style="background-color: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 10px;">Rechazada</span>';
+                } else {
+                    estadoBadge = '<span style="background-color: #ffc107; color: #333; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 10px;">Pendiente de revisión</span>';
+                }
+                
+                // Mensaje de rechazo
+                let alertaRechazo = "";
+                if (estadoTexto === 'rechazada' && prop.motivoRechazo) {
+                    alertaRechazo = `<div style="background-color: #ffebee; color: #c62828; padding: 8px; border-radius: 4px; font-size: 0.85rem; margin-top: 10px; margin-bottom: 10px;"><strong>Motivo del rechazo:</strong> ${prop.motivoRechazo}</div>`;
                 }
 
                 const tarjeta = document.createElement('div');
@@ -210,17 +226,28 @@
                 tarjeta.style.borderRadius = "8px";
                 tarjeta.style.padding = "1.5rem";
                 tarjeta.style.backgroundColor = "#fff";
+                
+                // Tarjetas pendientes o rechazadas con menos opacidad
+                if (estadoTexto !== 'aprobada') {
+                    tarjeta.style.opacity = "0.85";
+                }
 
                 tarjeta.innerHTML = `
-                  <h3 style="margin-top: 0; color: #333;">${prop.calle} ${prop.altura}${extraPiso}</h3>
-                  <p style="color: var(--gris); font-size: 0.9rem; margin-bottom: 0.5rem;">${prop.ciudad}, ${prop.provincia}</p>
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; color: #333;">${prop.calle} ${prop.altura}${extraPiso}</h3>
+                    <div>${estadoBadge}</div>
+                  </div>
+                  <p style="color: var(--gris); font-size: 0.9rem; margin-bottom: 0.5rem; margin-top:0;">${prop.ciudad}, ${prop.provincia}</p>
+                  
+                  ${alertaRechazo}
+                  
                   <p style="margin-bottom: 0.5rem;">${prop.descripcion}</p>
                   <p style="font-size: 0.9rem; margin-bottom: 1rem;"><strong>Capacidad:</strong> ${prop.cantPersonas} personas</p>
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <p style="color: var(--brasa); font-weight: bold; font-size: 1.2rem; margin: 0;">
                       $${prop.precioPorNoche} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">/ noche</span>
                     </p>
-                    <button onclick="eliminarPropiedad(${prop.id})" class="btn" style="background-color: #dc3545; padding: 0.5rem 1rem;">Eliminar</button>
+                    <button onclick="eliminarPropiedad(${prop.idPropiedad || prop.id})" class="btn" style="background-color: #dc3545; padding: 0.5rem 1rem;">Eliminar</button>
                   </div>
                 `;
                 contenedor.appendChild(tarjeta);
@@ -249,7 +276,7 @@
       .then(res => {
         if (res.ok) {
           alert("Propiedad eliminada correctamente.");
-          cargarMisPropiedades(); // Recarga la lista al instante
+          cargarMisPropiedades(); 
         } else {
           alert("No se pudo eliminar la propiedad.");
         }

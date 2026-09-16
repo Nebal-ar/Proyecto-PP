@@ -26,150 +26,84 @@ public class Propiedad {
 
     private String descripcion;
     private Integer diasCancelacionSinPenalizacion;
+    
+    // --- NUEVAS VARIABLES: SEGURIDAD Y VERIFICACIÓN ANTI-FRAUDE ---
+    private String estadoVerificacion;
+    private String comprobanteTitularidad;
+    private String fotoVerificacion;
+    private String motivoRechazo;
+
+    // Configuraciones para la seña
+    private int porcentajeSena;
+    private int horasLimitePago;
 
     public Propiedad() {
     }
 
-    public int getIdPropiedad() {
-        return idPropiedad;
-    }
+    public int getIdPropiedad() { return idPropiedad; }
+    public void setIdPropiedad(int idPropiedad) { this.idPropiedad = idPropiedad; }
 
-    public void setIdPropiedad(int idPropiedad) {
-        this.idPropiedad = idPropiedad;
-    }
+    public int getIdVendedorFk() { return idVendedorFk; }
+    public void setIdVendedorFk(int idVendedorFk) { this.idVendedorFk = idVendedorFk; }
 
-    public int getIdVendedorFk() {
-        return idVendedorFk;
-    }
+    public Integer getEstadiaMinima() { return estadiaMinima; }
+    public void setEstadiaMinima(Integer estadiaMinima) { this.estadiaMinima = estadiaMinima; }
 
-    public void setIdVendedorFk(int idVendedorFk) {
-        this.idVendedorFk = idVendedorFk;
-    }
+    public String getCalle() { return calle; }
+    public void setCalle(String calle) { this.calle = calle; }
 
-    public Integer getEstadiaMinima() {
-        return estadiaMinima;
-    }
+    public Integer getAltura() { return altura; }
+    public void setAltura(Integer altura) { this.altura = altura; }
 
-    public void setEstadiaMinima(Integer estadiaMinima) {
-        this.estadiaMinima = estadiaMinima;
-    }
+    public String getCodigoPostal() { return codigoPostal; }
+    public void setCodigoPostal(String codigoPostal) { this.codigoPostal = codigoPostal; }
 
-    public String getCalle() {
-        return calle;
-    }
+    public String getCiudad() { return ciudad; }
+    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
 
-    public void setCalle(String calle) {
-        this.calle = calle;
-    }
+    public String getProvincia() { return provincia; }
+    public void setProvincia(String provincia) { this.provincia = provincia; }
 
-    public Integer getAltura() {
-        return altura;
-    }
+    public String getPais() { return pais; }
+    public void setPais(String pais) { this.pais = pais; }
 
-    public void setAltura(Integer altura) {
-        this.altura = altura;
-    }
+    public BigDecimal getPrecioPorNoche() { return precioPorNoche; }
+    public void setPrecioPorNoche(BigDecimal precioPorNoche) { this.precioPorNoche = precioPorNoche; }
 
-    public String getCodigoPostal() {
-        return codigoPostal;
-    }
+    public Integer getMetrosCuadrados() { return metrosCuadrados; }
+    public void setMetrosCuadrados(Integer metrosCuadrados) { this.metrosCuadrados = metrosCuadrados; }
 
-    public void setCodigoPostal(String codigoPostal) {
-        this.codigoPostal = codigoPostal;
-    }
-
-    public String getCiudad() {
-        return ciudad;
-    }
-
-    public void setCiudad(String ciudad) {
-        this.ciudad = ciudad;
-    }
-
-    public String getProvincia() {
-        return provincia;
-    }
-
-    public void setProvincia(String provincia) {
-        this.provincia = provincia;
-    }
-
-    public String getPais() {
-        return pais;
-    }
-
-    public void setPais(String pais) {
-        this.pais = pais;
-    }
-
-    public BigDecimal getPrecioPorNoche() {
-        return precioPorNoche;
-    }
-
-    public void setPrecioPorNoche(BigDecimal precioPorNoche) {
-        this.precioPorNoche = precioPorNoche;
-    }
-
-    public Integer getMetrosCuadrados() {
-        return metrosCuadrados;
-    }
-
-    public void setMetrosCuadrados(Integer metrosCuadrados) {
-        this.metrosCuadrados = metrosCuadrados;
-    }
-
-    public Integer getCantPersonas() {
-        return cantPersonas;
-    }
-
-    public void setCantPersonas(Integer cantPersonas) {
-        this.cantPersonas = cantPersonas;
-    }
+    public Integer getCantPersonas() { return cantPersonas; }
+    public void setCantPersonas(Integer cantPersonas) { this.cantPersonas = cantPersonas; }
 
     public String getPiso() { return piso; }
-public void setPiso(String piso) { this.piso = piso; }
+    public void setPiso(String piso) { this.piso = piso; }
 
-    public String getDescripcion() {
-        return descripcion;
-    }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
+    public Integer getDiasCancelacionSinPenalizacion() { return diasCancelacionSinPenalizacion; }
+    public void setDiasCancelacionSinPenalizacion(Integer dias) { this.diasCancelacionSinPenalizacion = dias; }
 
-    public Integer getDiasCancelacionSinPenalizacion() {
-        return diasCancelacionSinPenalizacion;
-    }
+    public int getPorcentajeSena() { return porcentajeSena; }
+    public void setPorcentajeSena(int porcentajeSena) { this.porcentajeSena = porcentajeSena; }
 
-    public void setDiasCancelacionSinPenalizacion(Integer dias) {
-        this.diasCancelacionSinPenalizacion = dias;
-    }
-    // Nuevas configuraciones para la seña
-    private int porcentajeSena;
-    private int horasLimitePago;
+    public int getHorasLimitePago() { return horasLimitePago; }
+    public void setHorasLimitePago(int horasLimitePago) { this.horasLimitePago = horasLimitePago; }
 
-    public int getPorcentajeSena() {
-        return porcentajeSena;
-    }
+    public Double getPromedioEstrellas() { return promedioEstrellas; }
+    public void setPromedioEstrellas(Double promedioEstrellas) { this.promedioEstrellas = promedioEstrellas; }
 
-    public void setPorcentajeSena(int porcentajeSena) {
-        this.porcentajeSena = porcentajeSena;
-    }
+    // --- GETTERS Y SETTERS: VERIFICACIÓN ---
+    public String getEstadoVerificacion() { return estadoVerificacion; }
+    public void setEstadoVerificacion(String estadoVerificacion) { this.estadoVerificacion = estadoVerificacion; }
 
-    public int getHorasLimitePago() {
-        return horasLimitePago;
-    }
+    public String getComprobanteTitularidad() { return comprobanteTitularidad; }
+    public void setComprobanteTitularidad(String comprobanteTitularidad) { this.comprobanteTitularidad = comprobanteTitularidad; }
 
-    public void setHorasLimitePago(int horasLimitePago) {
-        this.horasLimitePago = horasLimitePago;
-    }
+    public String getFotoVerificacion() { return fotoVerificacion; }
+    public void setFotoVerificacion(String fotoVerificacion) { this.fotoVerificacion = fotoVerificacion; }
 
-    // Métodos (ponelos al final del archivo)
-    public Double getPromedioEstrellas() {
-        return promedioEstrellas;
-    }
-
-    public void setPromedioEstrellas(Double promedioEstrellas) {
-        this.promedioEstrellas = promedioEstrellas;
-    }
+    public String getMotivoRechazo() { return motivoRechazo; }
+    public void setMotivoRechazo(String motivoRechazo) { this.motivoRechazo = motivoRechazo; }
 }

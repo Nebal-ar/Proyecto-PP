@@ -21,7 +21,7 @@
 
     <form id="formPublicar" class="form-box" style="max-width:none; margin-top:1rem;" onsubmit="event.preventDefault(); publicar();">
       
-      <!-- SECCIÓN SEGURIDAD (NUEVO) -->
+      <!-- SECCIÓN SEGURIDAD -->
       <h3 style="margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Seguridad y Verificación</h3>
       <p style="font-size: 0.85rem; color: var(--gris); margin-bottom: 1rem;">
         Para evitar fraudes, todas las propiedades deben ser verificadas por un administrador antes de aparecer en el catálogo.
@@ -94,6 +94,18 @@
       <label>Precio por noche ($)</label>
       <input type="number" id="precio_por_noche" name="precio_por_noche" min="1" step="1" placeholder="Ej: 70000" required>
 
+      <!-- NUEVO: Configuraciones financieras -->
+      <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 1rem; border: 1px solid #ffeeba;">
+          <h4 style="margin-top: 0; margin-bottom: 10px; color: #856404;">Políticas de Alquiler</h4>
+          
+          <label style="color: #856404;">Porcentaje de seña a cobrar (%)</label>
+          <input type="number" id="porcentaje_sena" name="porcentaje_sena" min="0" max="100" value="30" placeholder="Ej: 30" required style="margin-bottom: 10px;">
+          
+          <label style="color: #856404;">Días límite para cancelación gratuita</label>
+          <input type="number" id="dias_cancelacion_sin_penalizacion" name="dias_cancelacion_sin_penalizacion" min="0" step="1" value="5" placeholder="Ej: 5" required>
+          <small style="color: #856404; display: block; margin-top: 5px;">Anticipación mínima para devolver la seña si el huésped cancela.</small>
+      </div>
+
       <label>Capacidad (personas)</label>
       <input type="number" id="cant_personas" name="cant_personas" min="1" step="1" placeholder="Ej: 4" required>
 
@@ -103,7 +115,6 @@
       <label>Descripción</label>
       <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
 
-      <!-- Cambiamos a submit para que aplique la validación del HTML5 -->
       <button type="submit" class="btn btn-block">Enviar para verificación</button>
     </form>
 
@@ -145,7 +156,6 @@
     }
 
     function publicar() {
-      // Usamos FormData para empaquetar los archivos e inputs
       const formElement = document.getElementById("formPublicar");
       const formData = new FormData(formElement);
 
@@ -154,7 +164,7 @@
 
       fetch("propiedades", {
         method: "POST",
-        body: formData // No seteamos Content-Type, fetch lo hace solo para multipart/form-data
+        body: formData 
       })
       .then(r => r.json())
       .then(res => {
@@ -203,7 +213,6 @@
                     extraPiso = ` - ${prop.piso}`;
                 }
                 
-                // Lógica de la etiqueta de estado
                 let estadoBadge = "";
                 let estadoTexto = prop.estadoVerificacion || 'pendiente';
                 
@@ -215,7 +224,6 @@
                     estadoBadge = '<span style="background-color: #ffc107; color: #333; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 10px;">Pendiente de revisión</span>';
                 }
                 
-                // Mensaje de rechazo
                 let alertaRechazo = "";
                 if (estadoTexto === 'rechazada' && prop.motivoRechazo) {
                     alertaRechazo = `<div style="background-color: #ffebee; color: #c62828; padding: 8px; border-radius: 4px; font-size: 0.85rem; margin-top: 10px; margin-bottom: 10px;"><strong>Motivo del rechazo:</strong> ${prop.motivoRechazo}</div>`;
@@ -227,7 +235,6 @@
                 tarjeta.style.padding = "1.5rem";
                 tarjeta.style.backgroundColor = "#fff";
                 
-                // Tarjetas pendientes o rechazadas con menos opacidad
                 if (estadoTexto !== 'aprobada') {
                     tarjeta.style.opacity = "0.85";
                 }

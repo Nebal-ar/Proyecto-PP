@@ -19,14 +19,14 @@ public class PropiedadDAO {
 
     /** Inserta una propiedad nueva y devuelve su ID generado. */
     public int crear(Propiedad p) throws SQLException {
-        // CORRECCIÓN: Se eliminó "disponibilidad_inmediata" para que los "?" coincidan exactos
+        // CORRECCIÓN: Se eliminó "disponibilidad_inmediata" y se agregó "porcentaje_sena"
         String sql =
             "INSERT INTO Propiedad "
             + "(ID_vendedor_fk, estadia_minima, calle, altura, codigo_postal, "
             + " ciudad, provincia, pais, precio_por_noche, metros_cuadrados, "
             + " cant_personas, piso, descripcion, dias_cancelacion_sin_penalizacion, "
-            + " estado_verificacion, comprobante_titularidad, foto_verificacion) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)";
+            + " estado_verificacion, comprobante_titularidad, foto_verificacion, porcentaje_sena) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)";
 
         try (Connection con = Conexion.getConexion();
              PreparedStatement ps = con.prepareStatement(
@@ -47,9 +47,11 @@ public class PropiedadDAO {
             ps.setString(13, p.getDescripcion());
             setIntOrNull(ps, 14, p.getDiasCancelacionSinPenalizacion());
             
-            // Los archivos ahora coinciden perfecto con el número 15 y 16
             ps.setString(15, p.getComprobanteTitularidad());
             ps.setString(16, p.getFotoVerificacion());
+            
+            // Se inserta el nuevo porcentaje (parámetro número 17)
+            ps.setInt(17, p.getPorcentajeSena());
 
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -121,12 +123,12 @@ public class PropiedadDAO {
 
     /** Actualiza una propiedad existente. */
     public boolean actualizar(Propiedad p) throws SQLException {
-        // CORRECCIÓN: Acá también borramos "disponibilidad_inmediata"
+        // CORRECCIÓN: Se agrega porcentaje_sena a la actualización
         String sql =
             "UPDATE Propiedad SET estadia_minima=?, calle=?, altura=?, "
             + "codigo_postal=?, ciudad=?, provincia=?, pais=?, precio_por_noche=?, "
             + "metros_cuadrados=?, cant_personas=?, piso=?, descripcion=?, "
-            + "dias_cancelacion_sin_penalizacion=? "
+            + "dias_cancelacion_sin_penalizacion=?, porcentaje_sena=? "
             + "WHERE ID_propiedad=?";
 
         try (Connection con = Conexion.getConexion();
@@ -145,7 +147,10 @@ public class PropiedadDAO {
             ps.setString(11, p.getPiso());
             ps.setString(12, p.getDescripcion());
             setIntOrNull(ps, 13, p.getDiasCancelacionSinPenalizacion());
-            ps.setInt(14, p.getIdPropiedad());
+            
+            // Nuevo campo en la actualización
+            ps.setInt(14, p.getPorcentajeSena());
+            ps.setInt(15, p.getIdPropiedad());
 
             return ps.executeUpdate() > 0;
         }
@@ -220,6 +225,9 @@ public class PropiedadDAO {
         p.setComprobanteTitularidad(rs.getString("comprobante_titularidad"));
         p.setFotoVerificacion(rs.getString("foto_verificacion"));
         p.setMotivoRechazo(rs.getString("motivo_rechazo"));
+        
+        // NUEVO: Mapeamos la seña desde la base de datos
+        p.setPorcentajeSena(rs.getInt("porcentaje_sena"));
         
         return p;
     }

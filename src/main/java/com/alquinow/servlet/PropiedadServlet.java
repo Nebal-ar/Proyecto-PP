@@ -20,16 +20,11 @@ import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.util.List;
 
-/**
- * Servlet REST-like para propiedades. Devuelve JSON para que el frontend
- * HTML5 (con fetch/JS) lo consuma.
- */
 @WebServlet("/propiedades")
-// MODIFICACIÓN 1: Esta etiqueta es OBLIGATORIA para poder recibir archivos en POST
 @MultipartConfig(
-    fileSizeThreshold = 1024 * 1024 * 2,  // 2 MB
-    maxFileSize = 1024 * 1024 * 50,       // 50 MB
-    maxRequestSize = 1024 * 1024 * 100    // 100 MB
+    fileSizeThreshold = 1024 * 1024 * 2,  
+    maxFileSize = 1024 * 1024 * 50,       
+    maxRequestSize = 1024 * 1024 * 100    
 )
 public class PropiedadServlet extends HttpServlet {
 
@@ -98,25 +93,20 @@ public class PropiedadServlet extends HttpServlet {
                 return;
             }
 
-            // --- INICIO DE LÓGICA DE SUBIDA DE ARCHIVOS ---
-            // 1. Creamos la carpeta "uploads" dentro del servidor si no existe
             String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
             File uploadDir = new File(uploadPath);
             if (!uploadDir.exists()) {
                 uploadDir.mkdirs();
             }
 
-            // 2. Procesamos el archivo "comprobante"
             Part partComprobante = req.getPart("comprobante");
             String nombreComprobante = null;
             if (partComprobante != null && partComprobante.getSize() > 0) {
                 String fileName = Paths.get(partComprobante.getSubmittedFileName()).getFileName().toString();
-                // Le agregamos la fecha en milisegundos para que el nombre sea único (ej: 1691234567_comp_factura.pdf)
                 nombreComprobante = System.currentTimeMillis() + "_comp_" + fileName;
                 partComprobante.write(uploadPath + File.separator + nombreComprobante);
             }
 
-            // 3. Procesamos el archivo "foto_verificacion"
             Part partFoto = req.getPart("foto_verificacion");
             String nombreFoto = null;
             if (partFoto != null && partFoto.getSize() > 0) {
@@ -124,9 +114,7 @@ public class PropiedadServlet extends HttpServlet {
                 nombreFoto = System.currentTimeMillis() + "_foto_" + fileName;
                 partFoto.write(uploadPath + File.separator + nombreFoto);
             }
-            // --- FIN DE LÓGICA DE ARCHIVOS ---
 
-            // Crear propiedad con los datos de texto
             Propiedad p = new Propiedad();
             p.setIdVendedorFk(u.getIdUsuario());
             p.setCalle(req.getParameter("calle"));
@@ -140,26 +128,22 @@ public class PropiedadServlet extends HttpServlet {
             p.setCantPersonas(parseEntero(req.getParameter("cant_personas")));
             p.setPiso(req.getParameter("piso"));
             p.setDescripcion(req.getParameter("descripcion"));
-            p.setDiasCancelacionSinPenalizacion(
-                    parseEntero(req.getParameter("dias_cancelacion_sin_penalizacion")));
+            p.setDiasCancelacionSinPenalizacion(parseEntero(req.getParameter("dias_cancelacion_sin_penalizacion")));
+            
+            // SE AGREGA LA CAPTURA DEL PORCENTAJE DE SEÑA
+            Integer sena = parseEntero(req.getParameter("porcentaje_sena"));
+            p.setPorcentajeSena(sena != null ? sena : 30);
             
             String precio = req.getParameter("precio_por_noche");
             if (precio != null && !precio.isBlank()) {
                 p.setPrecioPorNoche(new BigDecimal(precio));
             }
             
-            // Le pasamos los nombres de los archivos generados al objeto Propiedad
             p.setComprobanteTitularidad(nombreComprobante);
             p.setFotoVerificacion(nombreFoto);
             
             String pisoTexto = req.getParameter("piso");
-
-            boolean yaExiste = propiedadDAO.existePropiedad(
-                p.getCalle(), 
-                p.getAltura(), 
-                p.getCiudad(), 
-                pisoTexto
-            );
+            boolean yaExiste = propiedadDAO.existePropiedad(p.getCalle(), p.getAltura(), p.getCiudad(), pisoTexto);
 
             if (yaExiste) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); 
@@ -177,38 +161,26 @@ public class PropiedadServlet extends HttpServlet {
         }
     }
 
-    // ---------- Helpers de parseo ----------
-
     private Integer parseEntero(String s) {
-        if (s == null || s.isBlank()) {
-            return null;
-        }
-        try {
-            return Integer.valueOf(s.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        if (s == null || s.isBlank()) return null;
+        try { return Integer.valueOf(s.trim()); } 
+        catch (NumberFormatException e) { return null; }
     }
 
     private boolean tieneAlgo(String s) {
         return s != null && !s.isBlank();
     }
 
-    // ---------- Helpers de JSON ----------
-
     private String listaAJson(List<Propiedad> lista) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < lista.size(); i++) {
             sb.append(propiedadAJson(lista.get(i)));
-            if (i < lista.size() - 1) {
-                sb.append(",");
-            }
+            if (i < lista.size() - 1) sb.append(",");
         }
         return sb.append("]").toString();
     }
 
     private String propiedadAJson(Propiedad p) {
-        // MODIFICACIÓN: Agregamos el estadoVerificacion y motivoRechazo al JSON para que JavaScript los lea
         String estadoV = p.getEstadoVerificacion() != null ? p.getEstadoVerificacion() : "pendiente";
         
         return "{"
@@ -226,17 +198,13 @@ public class PropiedadServlet extends HttpServlet {
             + "\"descripcion\":\"" + escapar(p.getDescripcion()) + "\","
             + "\"promedioEstrellas\":" + (p.getPromedioEstrellas() != null ? p.getPromedioEstrellas() : 0.0) + ","
             + "\"estadoVerificacion\":\"" + escapar(estadoV) + "\","
-            + "\"motivoRechazo\":\"" + escapar(p.getMotivoRechazo()) + "\""
+            + "\"motivoRechazo\":\"" + escapar(p.getMotivoRechazo()) + "\","
+            + "\"porcentajeSena\":" + p.getPorcentajeSena()  // SE AGREGA AL JSON
             + "}";
     }
 
     private String escapar(String s) {
-        if (s == null) {
-            return "";
-        }
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", " ")
-                .replace("\r", " ");
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
     }
 }

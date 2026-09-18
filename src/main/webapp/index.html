@@ -84,69 +84,83 @@
 
         <!-- Lógica para cargar el catálogo y el buscador dinámico -->
         <script>
-                    document.addEventListener("DOMContentLoaded", () => {
-                        cargarPropiedades();
-                    });
+            document.addEventListener("DOMContentLoaded", () => {
+                cargarPropiedades('propiedades');
+            });
 
-                    function cargarPropiedades(filtros = '') {
-                    fetch('propiedades' + filtros)
-                            .then(response => {
-                            if (!response.ok) throw new Error("Error en el servidor");
-                                    return response.json();
-                            })
-                            .then(data => {
-                            const contenedor = document.getElementById("resultados");
-                                    if (data.length === 0) {
-                            contenedor.innerHTML = '<div class="alerta" style="grid-column: 1 / -1;">No encontramos propiedades que coincidan con tu búsqueda.</div>';
-                                    return;
-                            }
+            // --- Lógica para cargar las propiedades en index.html ---
+            function cargarPropiedades(url) {
+              fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                  const contenedor = document.getElementById("resultados");
+                  contenedor.innerHTML = "";
 
-                            contenedor.innerHTML = '';
-                                    data.forEach(prop => {
-                                    const tarjeta = document.createElement('div');
-                                            const htmlEstrellas = prop.promedioEstrellas > 0
-                                            ? `<span style="color: #f5c518; font - weight: bo l d; font-size: 1.1rem;">⭐ ${prop.promedioEstrellas}</spa n >`
-                                            : `<span style="background-color: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; color: #666;">Nuevo</span>`;
-                                            tarjeta.style.border = "1px solid #ddd";
-                                            tarjeta.style.borderRadius = "8px";
-                                            tarjeta.style.padding = "1.5rem";
-                                            tarjeta.style.backgroundColor = "#fff";
-                                            tarjeta.innerHTML = `
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    
-                                    <!-- Título y estrellas -->
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <h3 style="margin-top: 0; margin-bottom: 0; color: #333;">${prop.calle} ${prop.altura}</h3>
-                                        ${htmlEstrellas}
-                                    </div>
-                                    
-                                    <!-- Botón de favoritos -->
-                                    <button onclick="toggleFavorito(${prop.id}, this)" class="btn-favorito" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">🤍</button>
-                                </div>
-                                
-                                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">${prop.ciudad}, ${prop.provincia}</p>
-                                
-                                <p style="margin-bottom: 0.5rem;">${prop.descripcion}</p>
-                                <p style="font-size: 0.9rem;"><strong>Capacidad:</strong> ${prop.cantPersonas} personas</p>
-                                
-                                <!-- Precio y Botón de reservar -->
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                                    <p style="color: #e55e30; font-weight: bold; font-size: 1.2rem; margin: 0;">
-                                        $${prop.precioPorNoche} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">/ noche</span>
-                                    </p>
-                                    <button onclick="window.location.href='reservar.html?id=${prop.id}'" style="background-color: #e55e30; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                                     Reservar
-                                    </button>
-                                </div>
-                            `;
-                            
-                            contenedor.appendChild(tarjeta);
-                        });
-                    })
-                    .catch(error => {
-                        document.getElementById("resultados").innerHTML = `<div class="alerta" style="grid-column: 1 / -1; text-align: center; color: red;">Error de conexión.</div>`;
-                        console.error(error);
-                    });
+                  if (data.length === 0) {
+                    contenedor.innerHTML = '<p style="color:var(--gris);">No se encontraron propiedades.</p>';
+                    return;
+                  }
+
+                  data.forEach(prop => {
+                    let pisoHTML = "";
+                    if (prop.piso && prop.piso !== "0" && prop.piso.trim() !== "") {
+                      pisoHTML = ` - ${prop.piso}`;
+                    }
+
+                    const tarjeta = document.createElement("div");
+                    tarjeta.className = "propiedad-card";
+                    
+                    // Forzamos los estilos para recuperar el fondo blanco y que no parezca texto suelto
+                    tarjeta.style.backgroundColor = "#ffffff";
+                    tarjeta.style.borderRadius = "12px";
+                    tarjeta.style.boxShadow = "0 4px 6px rgba(0,0,0,0.05)";
+                    tarjeta.style.border = "1px solid #eaeaea";
+                    tarjeta.style.overflow = "hidden";
+                    tarjeta.style.display = "flex";
+                    tarjeta.style.flexDirection = "column";
+
+                    // Calculamos las estrellas (si no tiene, muestra "Sin reseñas")
+                    const estrellasHTML = prop.promedioEstrellas > 0 
+                        ? `⭐ ${prop.promedioEstrellas}` 
+                        : `<span style="font-size:0.8rem; color:#999;">Sin reseñas</span>`;
+
+                    tarjeta.innerHTML = `
+                      <!-- Placeholder de imagen (Acá va a ir la galería de fotos) -->
+                      <div class="imagen-placeholder" style="background-color: #f4f4f4; height: 160px; padding: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #eaeaea;">
+                          <span class="badge" style="background-color: #d1e7dd; color: #0f5132; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem;">Nuevo</span>
+                          <button onclick="toggleFavorito(${prop.idPropiedad}, this)" class="btn-favorito" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0;">🤍</button>
+                      </div>
+                      
+                      <!-- Información de la propiedad -->
+                      <div class="info" style="padding: 16px; display: flex; flex-direction: column; flex-grow: 1;">
+                          
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                              <div class="ubicacion" style="color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">${prop.ciudad}, ${prop.provincia}</div>
+                              <div class="estrellas" style="font-size: 0.9rem;">${estrellasHTML}</div>
+                          </div>
+                          
+                          <h3 class="titulo" style="margin: 0 0 8px 0; font-size: 1.15rem; color: #222;">${prop.calle} ${prop.altura}${pisoHTML}</h3>
+                          <div class="capacidad" style="font-size: 0.9rem; margin-bottom: 8px; color: #444;"><strong>Capacidad:</strong> ${prop.cantPersonas} personas</div>
+                          
+                          <p class="descripcion" style="font-size:0.9rem; color:#666; margin-bottom: 16px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${prop.descripcion}</p>
+                          
+                          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 16px; margin-top: auto;">
+                              <div class="precio" style="font-weight: 900; font-size: 1.2rem; color: #111;">
+                                  $${Number(prop.precioPorNoche).toLocaleString('es-AR')} <span style="font-size: 0.85rem; font-weight: normal; color: #666;">/ noche</span>
+                              </div>
+                              <button onclick="window.location.href='reservar.html?id=${prop.idPropiedad}'" style="background-color: #e55e30; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                  Reservar
+                              </button>
+                          </div>
+                      </div>
+                    `;
+                    contenedor.appendChild(tarjeta);
+                  });
+                })
+                .catch(err => {
+                  console.error("Error cargando propiedades:", err);
+                  document.getElementById("resultados").innerHTML = '<p style="color:red;">Error al cargar datos.</p>';
+                });
             }
 
             function buscar() {
@@ -162,7 +176,7 @@
                 if (personas) params.append("personas", personas);
 
                 const queryString = params.toString() ? '?' + params.toString() : '';
-                cargarPropiedades(queryString);
+                cargarPropiedades('propiedades' + queryString);
             }
 
             function toggleFavorito(idPropiedad, btnElement) {
@@ -198,7 +212,6 @@
                 })
                 .catch(error => console.error("Error en favoritos:", error));
             }
-            
         </script>
     </body>
 </html>

@@ -1,154 +1,152 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reservar — AlquiNow</title>
-  <link rel="stylesheet" href="css/estilos.css">
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reservar — AlquiNow</title>
+        <link rel="stylesheet" href="css/estilos.css">
+    </head>
+    <body>
 
-  <header class="nav">
-    <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
-    <nav class="nav-links">
-      <a href="index.html">Buscar</a>
-      <a href="login.html">Ingresar</a>
-    </nav>
-  </header>
+        <header class="nav">
+            <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
+            <nav class="nav-links">
+                <a href="index.html">Buscar</a>
+                <a href="login.html">Ingresar</a>
+            </nav>
+        </header>
 
-  <main class="contenedor" style="max-width:680px;">
-    <div id="detalle"></div>
+        <main class="contenedor" style="max-width:680px;">
+            <div id="detalle"></div>
 
-    <div class="form-box" style="margin-top:1.5rem; max-width:none;">
-      <h1 style="font-size:1.3rem;">Reservá tu estadía</h1>
-      <p class="sub">Elegí las fechas para ver el detalle de pago.</p>
-      <div id="msg"></div>
+            <div class="form-box" style="margin-top:1.5rem; max-width:none;">
+                <h1 style="font-size:1.3rem;">Reservá tu estadía</h1>
+                <p class="sub">Elegí las fechas para ver el detalle de pago.</p>
+                <div id="msg"></div>
 
-      <label for="fechaInicio">Desde</label>
-      <input type="date" id="fechaInicio" onchange="calcularTotal()">
+                <label for="fechaInicio">Desde</label>
+                <input type="date" id="fechaInicio" onchange="calcularTotal()">
 
-      <label for="fechaFinal">Hasta</label>
-      <input type="date" id="fechaFinal" onchange="calcularTotal()">
+                <label for="fechaFinal">Hasta</label>
+                <input type="date" id="fechaFinal" onchange="calcularTotal()">
 
-      <!-- Contenedor dinámico para la calculadora de precios y seña -->
-      <div id="desglose-precio"></div>
+                <!-- Contenedor dinámico para la calculadora de precios y seña -->
+                <div id="desglose-precio"></div>
 
-      <button class="btn btn-block" onclick="reservar()" style="margin-top: 1rem;">Confirmar reserva</button>
-    </div>
+                <button class="btn btn-block" onclick="reservar()" style="margin-top: 1rem;">Confirmar reserva</button>
+            </div>
 
-    <!-- Sección de Reseñas -->
-    <div class="form-box" style="margin-top:2rem; max-width:none;">
-      <h2>Reseñas de la propiedad</h2>
-      
-      <div id="lista-resenas" style="margin-top: 1rem; margin-bottom: 2rem;">
-        <p>Cargando reseñas...</p>
-      </div>
+            <!-- Sección de Reseñas -->
+            <div class="form-box" style="margin-top:2rem; max-width:none;">
+                <h2>Reseñas de la propiedad</h2>
 
-      <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Dejá tu reseña</h3>
-      <div id="msg-resena"></div>
-      
-      <label for="calificacion">Calificación</label>
-      <select id="calificacion" style="margin-bottom: 1rem; padding: 0.5rem; width: 100%;">
-        <option value="5">5 - Excelente</option>
-        <option value="4">4 - Muy buena</option>
-        <option value="3">3 - Buena</option>
-        <option value="2">2 - Regular</option>
-        <option value="1">1 - Mala</option>
-      </select>
+                <div id="lista-resenas" style="margin-top: 1rem; margin-bottom: 2rem;">
+                    <p>Cargando reseñas...</p>
+                </div>
 
-      <label for="comentario">Comentario</label>
-      <textarea id="comentario" rows="3" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px;" placeholder="¿Cómo fue tu estadía?"></textarea>
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Dejá tu reseña</h3>
+                <div id="msg-resena"></div>
 
-      <button class="btn" onclick="enviarResena()">Publicar reseña</button>
-    </div>
-  </main>
+                <label for="calificacion">Calificación</label>
+                <select id="calificacion" style="margin-bottom: 1rem; padding: 0.5rem; width: 100%;">
+                    <option value="5">5 - Excelente</option>
+                    <option value="4">4 - Muy buena</option>
+                    <option value="3">3 - Buena</option>
+                    <option value="2">2 - Regular</option>
+                    <option value="1">1 - Mala</option>
+                </select>
 
-  <script>
-    const idPropiedad = new URLSearchParams(location.search).get("id");
-    let fechasOcupadas = [];
-    let propiedadActual = null; // Guardamos la propiedad para calcular la plata
+                <label for="comentario">Comentario</label>
+                <textarea id="comentario" rows="3" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px;" placeholder="¿Cómo fue tu estadía?"></textarea>
 
-    // 1. Cargamos el detalle de la propiedad
-    fetch("propiedades?id=" + idPropiedad)
-      .then(r => r.json())
-      .then(p => {
-        if (!p) { 
-          document.getElementById("detalle").innerHTML = '<p>Propiedad no encontrada.</p>'; 
-          return; 
-        }
-        propiedadActual = p;
-        document.getElementById("detalle").innerHTML = `
+                <button class="btn" onclick="enviarResena()">Publicar reseña</button>
+            </div>
+        </main>
+
+        <script>
+            const idPropiedad = new URLSearchParams(location.search).get("id");
+            let fechasOcupadas = [];
+            let propiedadActual = null; // Guardamos la propiedad para calcular la plata
+
+            // 1. Cargamos el detalle de la propiedad (¡AHORA CON ANTI-CACHÉ!)
+            // Le agregamos la hora exacta para obligar a Chrome a buscar el dato nuevo
+            fetch("propiedades?id=" + idPropiedad + "&nocache=" + new Date().getTime())
+                    .then(r => r.json())
+                    .then(p => {
+                        if (!p) {
+                            document.getElementById("detalle").innerHTML = '<p>Propiedad no encontrada.</p>';
+                            return;
+                        }
+                        propiedadActual = p;
+                        console.log("✅ Propiedad traída de la BD:", p); // Podés apretar F12 para ver esto
+                        document.getElementById("detalle").innerHTML = `
           <div class="card"><div class="card-body">
             <div class="ubic">${p.ciudad}, ${p.provincia}</div>
             <h1 style="margin:.3rem 0;">${p.calle} ${p.altura || ''}</h1>
-            <div class="precio">$${Number(p.precio_por_noche || p.precioPorNoche || 25000).toLocaleString('es-AR')}
+            <div class="precio">$${Number(p.precioPorNoche || p.precio_por_noche || 25000).toLocaleString('es-AR')}
               <small>/ noche</small></div>
             <p style="margin-top:.6rem; color:var(--gris);">${p.descripcion || ''}</p>
           </div></div>`;
-      });
+                    });
 
-    // 2. Cargamos las fechas ocupadas desde tu backend
-    fetch("disponibilidad?idPropiedad=" + idPropiedad)
-      .then(r => r.json())
-      .then(fechas => {
-        fechasOcupadas = fechas;
-      })
-      .catch(e => console.error("Error al cargar disponibilidad", e));
+            // 2. Cargamos las fechas ocupadas desde tu backend
+            fetch("disponibilidad?idPropiedad=" + idPropiedad)
+                    .then(r => r.json())
+                    .then(fechas => {
+                        fechasOcupadas = fechas;
+                    })
+                    .catch(e => console.error("Error al cargar disponibilidad", e));
 
-    // 3. Bloqueamos el calendario para que no puedan elegir fechas del pasado
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById("fechaInicio").setAttribute("min", hoy);
-    document.getElementById("fechaFinal").setAttribute("min", hoy);
+            // 3. Bloqueamos el calendario para que no puedan elegir fechas del pasado
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById("fechaInicio").setAttribute("min", hoy);
+            document.getElementById("fechaFinal").setAttribute("min", hoy);
 
-    // 4. NUEVO: Calculadora en tiempo real de seña y cancelación
-    function calcularTotal() {
-        const inputInicio = document.getElementById("fechaInicio").value;
-        const inputFinal = document.getElementById("fechaFinal").value;
-        const desglose = document.getElementById("desglose-precio");
+            // 4. Calculadora en tiempo real de seña y cancelación
+            function calcularTotal() {
+                const inputInicio = document.getElementById("fechaInicio").value;
+                const inputFinal = document.getElementById("fechaFinal").value;
+                const desglose = document.getElementById("desglose-precio");
 
-        if (!inputInicio || !inputFinal || !propiedadActual) {
-            desglose.innerHTML = "";
-            return;
-        }
+                if (!inputInicio || !inputFinal || !propiedadActual) {
+                    desglose.innerHTML = "";
+                    return;
+                }
 
-        const dInicio = new Date(inputInicio);
-        const dFin = new Date(inputFinal);
+                const dInicio = new Date(inputInicio);
+                const dFin = new Date(inputFinal);
 
-        if (dInicio >= dFin) {
-            desglose.innerHTML = "";
-            return;
-        }
+                if (dInicio >= dFin) {
+                    desglose.innerHTML = "";
+                    return;
+                }
 
-        const noches = Math.round((dFin - dInicio) / (1000 * 60 * 60 * 24));
-        
-        // CORRECCIÓN: Evitamos que se rompa si la base de datos trae null o Array
-        const p = Array.isArray(propiedadActual) ? propiedadActual[0] : propiedadActual;
-        const precioNoche = Number(p.precioPorNoche || p.precio_por_noche || 25000);
-        
-        const total = noches * precioNoche;
-        
-        // Calculamos la seña usando el porcentaje de la BD (o 30% por defecto)
-        const porcentajeSena = p.porcentajeSena || 30; 
-        const sena = total * (porcentajeSena / 100);
-        
-        // Calculamos la fecha límite de cancelación gratis
-        const diasPenalizacion = p.diasCancelacionSinPenalizacion || 5; 
-        const limiteCancelacion = new Date(dInicio);
-        limiteCancelacion.setDate(limiteCancelacion.getDate() - diasPenalizacion);
-        
-        // Si la fecha límite ya pasó (ej: reserva sobre la hora)
-        const hoyDate = new Date();
-        let textoCancelacion = "";
-        
-        if (limiteCancelacion > hoyDate) {
-            // Le sumamos 1 día a la vista para compensar la zona horaria al mostrarla
-            limiteCancelacion.setDate(limiteCancelacion.getDate() + 1); 
-            textoCancelacion = `<strong style="color: #28a745;">Cancelación gratuita</strong> hasta el ${limiteCancelacion.toLocaleDateString('es-AR')}. Pasada esa fecha, la seña no es reembolsable.`;
-        } else {
-            textoCancelacion = `<strong style="color: #dc3545;">Reserva no reembolsable:</strong> Por la cercanía de la fecha, si cancelás perderás la seña abonada.`;
-        }
+                const noches = Math.round((dFin - dInicio) / (1000 * 60 * 60 * 24));
+                const p = Array.isArray(propiedadActual) ? propiedadActual[0] : propiedadActual;
+                const precioNoche = Number(p.precioPorNoche || p.precio_por_noche || 25000);
+                const total = noches * precioNoche;
 
-        desglose.innerHTML = `
+                // Calculamos la seña leyendo EXACTAMENTE lo que dice la base de datos
+                const porcentajeSena = (p.porcentajeSena !== undefined && p.porcentajeSena !== null) ? p.porcentajeSena : 30;
+                console.log("🧮 Porcentaje de seña aplicado:", porcentajeSena + "%");
+
+                const sena = total * (porcentajeSena / 100);
+
+                const diasPenalizacion = p.diasCancelacionSinPenalizacion || 5;
+                const limiteCancelacion = new Date(dInicio);
+                limiteCancelacion.setDate(limiteCancelacion.getDate() - diasPenalizacion);
+
+                const hoyDate = new Date();
+                let textoCancelacion = "";
+
+                if (limiteCancelacion > hoyDate) {
+                    limiteCancelacion.setDate(limiteCancelacion.getDate() + 1);
+                    textoCancelacion = `<strong style="color: #28a745;">Cancelación gratuita</strong> hasta el ${limiteCancelacion.toLocaleDateString('es-AR')}. Pasada esa fecha, la seña no es reembolsable.`;
+                } else {
+                    textoCancelacion = `<strong style="color: #dc3545;">Reserva no reembolsable:</strong> Por la cercanía de la fecha, si cancelás perderás la seña abonada.`;
+                }
+
+                desglose.innerHTML = `
             <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 1.5rem; border: 1px solid #ddd;">
                 <h3 style="font-size: 1.1rem; margin-top: 0; margin-bottom: 10px;">Resumen de pago</h3>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -165,145 +163,146 @@
                 </p>
             </div>
         `;
-    }
+            }
 
-    // 5. Función de reserva
-    function reservar() {
-      const inputInicio = document.getElementById("fechaInicio").value;
-      const inputFinal = document.getElementById("fechaFinal").value;
-      const msg = document.getElementById("msg");
+            // 5. Función de reserva
+            function reservar() {
+                const inputInicio = document.getElementById("fechaInicio").value;
+                const inputFinal = document.getElementById("fechaFinal").value;
+                const msg = document.getElementById("msg");
 
-      if (!inputInicio || !inputFinal) {
-        msg.innerHTML = '<div class="alerta alerta-error">Por favor, elegí ambas fechas.</div>';
-        return;
-      }
-      if (inputInicio >= inputFinal) {
-        msg.innerHTML = '<div class="alerta alerta-error">La fecha de fin debe ser posterior al inicio.</div>';
-        return;
-      }
+                if (!inputInicio || !inputFinal) {
+                    msg.innerHTML = '<div class="alerta alerta-error">Por favor, elegí ambas fechas.</div>';
+                    return;
+                }
+                if (inputInicio >= inputFinal) {
+                    msg.innerHTML = '<div class="alerta alerta-error">La fecha de fin debe ser posterior al inicio.</div>';
+                    return;
+                }
 
-      let fechaActual = new Date(inputInicio);
-      const fechaFin = new Date(inputFinal);
-      let rangoInvalido = false;
+                let fechaActual = new Date(inputInicio);
+                const fechaFin = new Date(inputFinal);
+                let rangoInvalido = false;
 
-      while (fechaActual <= fechaFin) {
-        const fechaString = fechaActual.toISOString().split('T')[0];
-        if (fechasOcupadas.includes(fechaString)) {
-          rangoInvalido = true;
-          break;
-        }
-        fechaActual.setDate(fechaActual.getDate() + 1);
-      }
+                while (fechaActual <= fechaFin) {
+                    const fechaString = fechaActual.toISOString().split('T')[0];
+                    if (fechasOcupadas.includes(fechaString)) {
+                        rangoInvalido = true;
+                        break;
+                    }
+                    fechaActual.setDate(fechaActual.getDate() + 1);
+                }
 
-      if (rangoInvalido) {
-        msg.innerHTML = '<div class="alerta alerta-error">Algunas fechas ya están reservadas. Elegí otro rango.</div>';
-        return;
-      }
+                if (rangoInvalido) {
+                    msg.innerHTML = '<div class="alerta alerta-error">Algunas fechas ya están reservadas. Elegí otro rango.</div>';
+                    return;
+                }
 
-      const body = new URLSearchParams();
-      body.append("idPropiedad", idPropiedad);
-      body.append("fechaInicio", inputInicio);
-      body.append("fechaFinal", inputFinal);
+                const body = new URLSearchParams();
+                body.append("idPropiedad", idPropiedad);
+                body.append("fechaInicio", inputInicio);
+                body.append("fechaFinal", inputFinal);
 
-      fetch("reservas", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString()
-      })
-      .then(r => r.json())
-      .then(res => {
-        if (res.ok) {
-          msg.innerHTML = `<div class="alerta alerta-ok">
-            ¡Reserva confirmada! Revisá tu panel de "Mis Reservas" para gestionar el pago de la seña.</div>`;
-          document.getElementById("desglose-precio").innerHTML = ""; // Limpiamos la calculadora
-        } else {
-          msg.innerHTML = `<div class="alerta alerta-error">${res.error || 'No se pudo reservar.'}</div>`;
-        }
-      })
-      .catch(() => {
-        msg.innerHTML = '<div class="alerta alerta-error">Iniciá sesión como huésped para reservar.</div>';
-      });
-    }
+                fetch("reservas", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: body.toString()
+                })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.ok) {
+                                msg.innerHTML = `<div class="alerta alerta-ok">
+                  ¡Reserva confirmada! Revisá tu panel de "Mis Reservas" para gestionar el pago de la seña.</div>`;
+                                document.getElementById("desglose-precio").innerHTML = ""; // Limpiamos la calculadora
+                            } else {
+                                msg.innerHTML = `<div class="alerta alerta-error">${res.error || 'No se pudo reservar.'}</div>`;
+                            }
+                        })
+                        .catch(() => {
+                            msg.innerHTML = '<div class="alerta alerta-error">Iniciá sesión como huésped para reservar.</div>';
+                        });
+            }
 
-    // 6. Cargar reseñas
-    function cargarResenas() {
-      fetch("resenas?idPropiedad=" + idPropiedad)
-        .then(r => r.json())
-        .then(resenas => {
-          const cont = document.getElementById("lista-resenas");
-          if (!resenas || resenas.length === 0) {
-            cont.innerHTML = "<p>Aún no hay reseñas para esta propiedad.</p>";
-            return;
-          }
-          
-          let html = "";
-          resenas.forEach(r => {
-            const estrellas = "★".repeat(r.calificacion) + "☆".repeat(5 - r.calificacion);
-            const fecha = new Date(r.fecha).toLocaleDateString('es-AR');
-            
-            html += `
-              <div style="border-bottom: 1px solid #ddd; padding: 1rem 0;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <strong>${r.nombreUsuario}</strong>
-                  <span style="color: #f39c12; font-size: 1.1rem;">${estrellas}</span>
-                </div>
-                <p style="margin: 0.5rem 0; color: #555;">${r.comentario}</p>
-                <small style="color: #999;">${fecha}</small>
-              </div>
-            `;
-          });
-          cont.innerHTML = html;
-        })
-        .catch(e => console.error("Error al cargar reseñas", e));
-    }
+            // 6. Cargar reseñas
+            function cargarResenas() {
+                fetch("resenas?idPropiedad=" + idPropiedad)
+                        .then(r => r.json())
+                        .then(resenas => {
+                            const cont = document.getElementById("lista-resenas");
+                            if (!resenas || resenas.length === 0) {
+                                cont.innerHTML = "<p>Aún no hay reseñas para esta propiedad.</p>";
+                                return;
+                            }
 
-    // 7. Enviar reseña
-    function enviarResena() {
-      const calificacion = document.getElementById("calificacion").value;
-      const comentario = document.getElementById("comentario").value;
-      const msgResena = document.getElementById("msg-resena");
+                            let html = "";
+                            resenas.forEach(r => {
+                                const estrellas = "★".repeat(r.calificacion) + "☆".repeat(5 - r.calificacion);
+                                const fecha = new Date(r.fecha).toLocaleDateString('es-AR');
 
-      if (!calificacion || !comentario) {
-        msgResena.innerHTML = '<div class="alerta alerta-error">Completá la calificación y el comentario.</div>';
-        return;
-      }
+                                html += `
+                    <div style="border-bottom: 1px solid #ddd; padding: 1rem 0;">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>${r.nombreUsuario}</strong>
+                        <span style="color: #f39c12; font-size: 1.1rem;">${estrellas}</span>
+                      </div>
+                      <p style="margin: 0.5rem 0; color: #555;">${r.comentario}</p>
+                      <small style="color: #999;">${fecha}</small>
+                    </div>
+                  `;
+                            });
+                            cont.innerHTML = html;
+                        })
+                        .catch(e => console.error("Error al cargar reseñas", e));
+            }
 
-      const body = new URLSearchParams();
-      body.append("idPropiedad", idPropiedad);
-      body.append("calificacion", calificacion);
-      body.append("comentario", comentario);
+            // 7. Enviar reseña
+            function enviarResena() {
+                const calificacion = document.getElementById("calificacion").value;
+                const comentario = document.getElementById("comentario").value;
+                const msgResena = document.getElementById("msg-resena");
 
-      fetch("resenas", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString()
-      })
-      .then(r => {
-        if (r.status === 401) throw new Error("No autenticado");
-        return r.json();
-      })
-      .then(res => {
-        if (res.ok) {
-          msgResena.innerHTML = `<div class="alerta alerta-ok">${res.mensaje}</div>`;
-          document.getElementById("comentario").value = "";
-          document.getElementById("calificacion").value = "5";
-          cargarResenas(); 
-        } else {
-          msgResena.innerHTML = `<div class="alerta alerta-error">${res.error}</div>`;
-        }
-      })
-      .catch((e) => {
-        if (e.message === "No autenticado") {
-          msgResena.innerHTML = '<div class="alerta alerta-error">Tenés que <a href="login.html">iniciar sesión</a> para dejar una reseña.</div>';
-        } else {
-          msgResena.innerHTML = '<div class="alerta alerta-error">Ocurrió un error al enviar la reseña.</div>';
-        }
-      });
-    }
+                if (!calificacion || !comentario) {
+                    msgResena.innerHTML = '<div class="alerta alerta-error">Completá la calificación y el comentario.</div>';
+                    return;
+                }
 
-    cargarResenas();
+                const body = new URLSearchParams();
+                body.append("idPropiedad", idPropiedad);
+                body.append("calificacion", calificacion);
+                body.append("comentario", comentario);
 
-  </script>
-  <script src="js/session.js"></script>
-</body>
+                fetch("resenas", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: body.toString()
+                })
+                        .then(r => {
+                            if (r.status === 401)
+                                throw new Error("No autenticado");
+                            return r.json();
+                        })
+                        .then(res => {
+                            if (res.ok) {
+                                msgResena.innerHTML = `<div class="alerta alerta-ok">${res.mensaje}</div>`;
+                                document.getElementById("comentario").value = "";
+                                document.getElementById("calificacion").value = "5";
+                                cargarResenas();
+                            } else {
+                                msgResena.innerHTML = `<div class="alerta alerta-error">${res.error}</div>`;
+                            }
+                        })
+                        .catch((e) => {
+                            if (e.message === "No autenticado") {
+                                msgResena.innerHTML = '<div class="alerta alerta-error">Tenés que <a href="login.html">iniciar sesión</a> para dejar una reseña.</div>';
+                            } else {
+                                msgResena.innerHTML = '<div class="alerta alerta-error">Ocurrió un error al enviar la reseña.</div>';
+                            }
+                        });
+            }
+
+            cargarResenas();
+
+        </script>
+        <script src="js/session.js"></script>
+    </body>
 </html>

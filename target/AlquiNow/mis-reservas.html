@@ -29,7 +29,7 @@
 
         <!-- CARTELES VISUALES -->
         <div id="cartelExito" style="display: none; position: fixed; bottom: 20px; right: 20px; background-color: #4CAF50; color: white; padding: 15px 25px; border-radius: 5px; box-shadow: 0px 4px 6px rgba(0,0,0,0.2); z-index: 1000; font-family: sans-serif; font-weight: bold;">
-            ✅ ¡Reseña publicada con éxito!
+            ✅ Acción completada con éxito
         </div>
 
         <div id="cartelError" style="display: none; position: fixed; bottom: 20px; right: 20px; background-color: #f44336; color: white; padding: 15px 25px; border-radius: 5px; box-shadow: 0px 4px 6px rgba(0,0,0,0.2); z-index: 1000; font-family: sans-serif; font-weight: bold;">
@@ -43,7 +43,6 @@
             });
 
             function cargarReservas() {
-                // Le pedimos al backend la lista de reservas del usuario conectado
                 fetch('reservas')
                 .then(response => {
                     if (!response.ok) throw new Error("No autorizado o error del servidor");
@@ -56,10 +55,8 @@
                         return;
                     }
 
-                    // Limpiamos el texto de "Cargando..."
                     contenedor.innerHTML = '';
                     
-                    // Iteramos sobre las reservas y armamos las tarjetas visuales
                     data.forEach(reserva => {
                         const tarjeta = document.createElement('div');
                         tarjeta.style.border = "1px solid #ddd";
@@ -67,16 +64,37 @@
                         tarjeta.style.borderRadius = "8px";
                         tarjeta.style.backgroundColor = "#fff";
                         
-                        // 1. Filtramos el estado para que se lea natural
+                        // 1. Filtramos el estado para que se lea natural y le asignamos un color
                         let estadoLimpio = reserva.estado;
+                        let colorBadge = "#777";
+
                         if (reserva.estado === 'pendiente_sena') {
                             estadoLimpio = 'Pendiente de seña';
+                            colorBadge = "#f0ad4e";
+                        } else if (reserva.estado === 'confirmada') {
+                            estadoLimpio = 'Confirmada';
+                            colorBadge = "#28a745";
+                        } else if (reserva.estado === 'cancelada') {
+                            estadoLimpio = 'Cancelada (Sin cargo)';
+                            colorBadge = "#dc3545";
+                            tarjeta.style.opacity = "0.7";
+                        } else if (reserva.estado === 'cancelada_reembolsada') {
+                            estadoLimpio = 'Cancelada con Reembolso';
+                            colorBadge = "#dc3545";
+                            tarjeta.style.opacity = "0.7";
+                        } else if (reserva.estado === 'cancelada_penalizada') {
+                            estadoLimpio = 'Cancelada (Penalidad aplicada)';
+                            colorBadge = "#dc3545";
+                            tarjeta.style.opacity = "0.7";
+                        } else if (reserva.estado === 'finalizada') {
+                            estadoLimpio = 'Finalizada';
+                            colorBadge = "#007bff";
                         }
 
-                        // 2. Acortamos la fecha (corta los últimos caracteres)
+                        // 2. Acortamos la fecha
                         let limiteCorto = reserva.fechaLimitePago ? reserva.fechaLimitePago.substring(0, 16) : '';
                         
-                        // 3. Preparamos las alertas visuales y botones (CORREGIDO)
+                        // 3. Preparamos las alertas visuales y botones
                         let alertaSena = "";
                         let botonPagar = "";
                         if (reserva.estado === 'pendiente_sena') {
@@ -88,13 +106,21 @@
                                           </button>`;
                         }
 
+                        // NUEVO: Botón de Cancelar Reserva (solo si está activa)
+                        let botonCancelar = "";
+                        if (reserva.estado === 'pendiente_sena' || reserva.estado === 'confirmada') {
+                            botonCancelar = `<button onclick="ejecutarCancelacion(${reserva.id || reserva.idReserva})" style="background-color: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; margin-left: 10px; font-weight: bold;">
+                                                Cancelar Reserva
+                                             </button>`;
+                        }
+
                         // 4. Armamos el HTML de la tarjeta
                         let idProp = reserva.idPropiedadFk || reserva.idPropiedad || 0;
                         let idRes = reserva.idReserva || reserva.id || 0;
                         
-                        // --- LÓGICA DE LOS 60 DÍAS (FRONTEND) ---
+                        // LÓGICA DE LOS 60 DÍAS (FRONTEND)
                         let botonResena = "";
-                        if (reserva.fechaFinal) {
+                        if (reserva.fechaFinal && reserva.estado === 'finalizada') {
                             const hoy = new Date();
                             const fechaFin = new Date(reserva.fechaFinal);
                             const milisegundosPorDia = 1000 * 60 * 60 * 24;
@@ -120,13 +146,16 @@
                             <p style="margin-bottom: 0.2rem;"><strong>Desde:</strong> ${reserva.fechaInicio}</p>
                             <p style="margin-bottom: 0.5rem;"><strong>Hasta:</strong> ${reserva.fechaFinal}</p>
                             
-                            <p style="margin-bottom: 0.5rem;"><strong>Estado:</strong> ${estadoLimpio}</p>
+                            <p style="margin-bottom: 0.5rem;"><strong>Estado:</strong> <span style="background-color: ${colorBadge}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">${estadoLimpio}</span></p>
                             <p style="color: #e55e30; font-weight: bold; margin: 0;">
                                 Monto total: $${reserva.montoTotal}
                             </p>
                             
                             ${alertaSena}
-                            ${botonPagar}
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                ${botonPagar}
+                                ${botonCancelar}
+                            </div>
                         `;
 
                         contenedor.appendChild(tarjeta);
@@ -136,6 +165,41 @@
                     document.getElementById("contenedor-reservas").innerHTML =
                         '<div class="alerta alerta-error">Error al cargar las reservas. Asegurate de haber iniciado sesión.</div>';
                     console.error(error);
+                });
+            }
+
+            // NUEVA FUNCIÓN: Envía la orden de cancelar al servidor
+            function ejecutarCancelacion(idReserva) {
+                if (!confirm("¿Estás seguro de que querés cancelar esta reserva?\nSe aplicarán las políticas de reembolso correspondientes.")) {
+                    return;
+                }
+
+                const datos = new URLSearchParams();
+                datos.append("accion", "cancelar");
+                datos.append("id", idReserva);
+
+                fetch('reservas', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: datos.toString()
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        const cartel = document.getElementById("cartelExito");
+                        cartel.innerHTML = "✅ Reserva cancelada";
+                        cartel.style.display = "block"; 
+                        setTimeout(() => {
+                            cartel.style.display = "none";
+                            cargarReservas(); // Recarga la lista sin refrescar toda la página
+                        }, 2500);
+                    } else {
+                        mostrarError(data.error || "No se pudo cancelar la reserva.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    mostrarError("Ocurrió un problema de conexión.");
                 });
             }
             
@@ -148,6 +212,13 @@
             function cerrarModalResena() {
                 document.getElementById("modal-resena").style.display = "none";
                 document.getElementById("form-resena").reset(); 
+            }
+
+            function mostrarError(mensaje) {
+                const cartelError = document.getElementById("cartelError");
+                document.getElementById("textoError").innerText = "❌ " + mensaje;
+                cartelError.style.display = "block";
+                setTimeout(() => cartelError.style.display = "none", 4000);
             }
 
             function enviarResena(evento) {
@@ -164,6 +235,7 @@
                 .then(data => {
                     if (data.ok) {
                         const cartel = document.getElementById("cartelExito");
+                        cartel.innerHTML = "✅ ¡Reseña publicada con éxito!";
                         cartel.style.display = "block"; 
                         setTimeout(() => {
                             cartel.style.display = "none";
@@ -171,21 +243,13 @@
                         }, 3000);
                         cerrarModalResena();
                     } else {
-                        const cartelError = document.getElementById("cartelError");
-                        document.getElementById("textoError").innerText = "❌ " + data.error;
-                        cartelError.style.display = "block";
-                        setTimeout(() => {
-                            cartelError.style.display = "none";
-                        }, 4000);
+                        mostrarError(data.error);
                         cerrarModalResena(); 
                     }
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    const cartelError = document.getElementById("cartelError");
-                    document.getElementById("textoError").innerText = "❌ Ocurrió un problema de conexión.";
-                    cartelError.style.display = "block";
-                    setTimeout(() => cartelError.style.display = "none", 4000);
+                    mostrarError("Ocurrió un problema de conexión.");
                     cerrarModalResena();
                 });
             }

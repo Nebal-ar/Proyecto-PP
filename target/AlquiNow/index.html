@@ -84,39 +84,34 @@
 
         <!-- Lógica para cargar el catálogo y el buscador dinámico -->
         <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                cargarPropiedades();
-            });
+                    document.addEventListener("DOMContentLoaded", () => {
+                        cargarPropiedades();
+                    });
 
-            function cargarPropiedades(filtros = '') {
-                fetch('propiedades' + filtros)
-                    .then(response => {
-                        if (!response.ok) throw new Error("Error en el servidor");
-                        return response.json();
-                    })
-                    .then(data => {
-                        const contenedor = document.getElementById("resultados");
-                        
-                        if (data.length === 0) {
+                    function cargarPropiedades(filtros = '') {
+                    fetch('propiedades' + filtros)
+                            .then(response => {
+                            if (!response.ok) throw new Error("Error en el servidor");
+                                    return response.json();
+                            })
+                            .then(data => {
+                            const contenedor = document.getElementById("resultados");
+                                    if (data.length === 0) {
                             contenedor.innerHTML = '<div class="alerta" style="grid-column: 1 / -1;">No encontramos propiedades que coincidan con tu búsqueda.</div>';
-                            return;
-                        }
+                                    return;
+                            }
 
-                        contenedor.innerHTML = '';
-                        
-                        data.forEach(prop => {
-                            const tarjeta = document.createElement('div');
-                            
-                            const htmlEstrellas = prop.promedioEstrellas > 0
-                                ? `<span style="color: #f5c518; font-weight: bold; font-size: 1.1rem;">⭐ ${prop.promedioEstrellas}</span>`
-                                : `<span style="background-color: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; color: #666;">Nuevo</span>`; 
-                            
-                            tarjeta.style.border = "1px solid #ddd";
-                            tarjeta.style.borderRadius = "8px";
-                            tarjeta.style.padding = "1.5rem";
-                            tarjeta.style.backgroundColor = "#fff";
-                            
-                            tarjeta.innerHTML = `
+                            contenedor.innerHTML = '';
+                                    data.forEach(prop => {
+                                    const tarjeta = document.createElement('div');
+                                            const htmlEstrellas = prop.promedioEstrellas > 0
+                                            ? `<span style="color: #f5c518; font - weight: bo l d; font-size: 1.1rem;">⭐ ${prop.promedioEstrellas}</spa n >`
+                                            : `<span style="background-color: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; color: #666;">Nuevo</span>`;
+                                            tarjeta.style.border = "1px solid #ddd";
+                                            tarjeta.style.borderRadius = "8px";
+                                            tarjeta.style.padding = "1.5rem";
+                                            tarjeta.style.backgroundColor = "#fff";
+                                            tarjeta.innerHTML = `
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                     
                                     <!-- Título y estrellas -->
@@ -139,8 +134,8 @@
                                     <p style="color: #e55e30; font-weight: bold; font-size: 1.2rem; margin: 0;">
                                         $${prop.precioPorNoche} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">/ noche</span>
                                     </p>
-                                    <button onclick="window.location.href='propiedad.html?id=${prop.id}'" style="background-color: #e55e30; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                                        Reservar
+                                    <button onclick="window.location.href='reservar.html?id=${prop.id}'" style="background-color: #e55e30; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                     Reservar
                                     </button>
                                 </div>
                             `;

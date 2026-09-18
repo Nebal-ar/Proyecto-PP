@@ -85,7 +85,6 @@ public class ReservaServlet extends HttpServlet {
         resp.setContentType("application/json; charset=UTF-8");
         PrintWriter out = resp.getWriter();
 
-      // 1. Pedimos la sesión actual sin crear una nueva
         HttpSession session = req.getSession(false);
         Usuario u = null;
 
@@ -93,7 +92,6 @@ public class ReservaServlet extends HttpServlet {
             u = (Usuario) session.getAttribute("usuario");
         }
 
-        // 2. Validación real de seguridad: el candado de la API (AHORA CON BOOLEANOS)
         if (u == null || !u.isHuesped()) {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"ok\": false, \"error\": \"Acceso denegado. Debes iniciar sesión como huésped para reservar.\"}");
@@ -102,13 +100,23 @@ public class ReservaServlet extends HttpServlet {
 
         try {
             String accion = req.getParameter("accion");
+            
+            // --- NÚCLEO DE CANCELACIONES ---
             if ("cancelar".equals(accion)) {
                 int id = Integer.parseInt(req.getParameter("id"));
-                boolean ok = reservaDAO.actualizarEstado(id, "cancelada");
-                out.print("{\"ok\":" + ok + "}");
+                
+                // MODIFICACIÓN: Llamamos a nuestra función inteligente de cancelación
+                boolean ok = reservaDAO.cancelarReserva(id);
+                
+                if (ok) {
+                    out.print("{\"ok\": true}");
+                } else {
+                    out.print("{\"ok\": false, \"error\": \"La reserva ya no puede ser cancelada.\"}");
+                }
                 return;
             }
 
+            // --- NÚCLEO DE CREACIÓN DE RESERVAS ---
             int idPropiedad = Integer.parseInt(req.getParameter("idPropiedad"));
             LocalDate inicio = LocalDate.parse(req.getParameter("fechaInicio"));
             LocalDate fin = LocalDate.parse(req.getParameter("fechaFinal"));
@@ -119,37 +127,42 @@ public class ReservaServlet extends HttpServlet {
                 return;
             }
 
-            // Calculamos el monto total: noches * precio por noche
             Propiedad p = propiedadDAO.buscarPorId(idPropiedad);
             if (p == null) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 out.print("{\"error\":\"La propiedad no existe.\"}");
                 return;
             }
+            
             long noches = ChronoUnit.DAYS.between(inicio, fin);
-            BigDecimal monto = p.getPrecioPorNoche()
-                    .multiply(BigDecimal.valueOf(noches));
+            BigDecimal monto = p.getPrecioPorNoche().multiply(BigDecimal.valueOf(noches));
 
             Reserva r = new Reserva();
             r.setIdCompradorFk(u.getIdUsuario());
             r.setIdPropiedadFk(idPropiedad);
             r.setFechaInicio(Date.valueOf(inicio));
             r.setFechaFinal(Date.valueOf(fin));
-            r.setEstado("pendiente_sena"); // El nuevo estado esperando el pago
+            r.setEstado("pendiente_sena"); 
             r.setMontoTotal(monto);
+            
+            // Guardamos el porcentaje de seña configurado por el dueño (o 30% por defecto)
+            int porcentajeSena = p.getPorcentajeSena() > 0 ? p.getPorcentajeSena() : 30;
+            r.setPorcentajeSenaAplicado(porcentajeSena);
+            r.setMontoPagado(BigDecimal.ZERO); // Arranca en 0 hasta que no procese el pago
 
-            // Calculamos la hora exacta en la que vence la reserva si no paga la seña
-            int horasLimite = p.getHorasLimitePago() > 0 ? p.getHorasLimitePago() : 24; // 24hs por defecto
+            int horasLimite = p.getHorasLimitePago() > 0 ? p.getHorasLimitePago() : 24;
             java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
             java.time.LocalDateTime limitePago = ahora.plusHours(horasLimite);
             r.setFechaLimitePago(java.sql.Timestamp.valueOf(limitePago));
 
-            // Fecha límite de cancelación según la política de la propiedad
             Integer diasCancel = p.getDiasCancelacionSinPenalizacion();
             if (diasCancel != null && diasCancel > 0) {
                 r.setDiasCancelacionAplicados(diasCancel);
-                r.setFechaLimiteCancelacion(
-                        Date.valueOf(inicio.minusDays(diasCancel)));
+                r.setFechaLimiteCancelacion(Date.valueOf(inicio.minusDays(diasCancel)));
+            } else {
+                // Si el dueño no puso nada, le damos 5 días por defecto
+                r.setDiasCancelacionAplicados(5);
+                r.setFechaLimiteCancelacion(Date.valueOf(inicio.minusDays(5)));
             }
 
             int id = reservaDAO.crear(r);
@@ -157,6 +170,7 @@ public class ReservaServlet extends HttpServlet {
                     + ",\"noches\":" + noches + ",\"monto\":" + monto + "}");
 
         } catch (Exception e) {
+            e.printStackTrace();
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.print("{\"error\":\"" + safe(e.getMessage()) + "\"}");
         }

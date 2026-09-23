@@ -80,15 +80,39 @@
         </main> 
 
         <!-- Cargamos el detector de sesiones -->
-        <script src="js/session.js?v=3"></script>
+        <script src="js/session.js?v=4"></script>
 
         <!-- Lógica para cargar el catálogo y el buscador dinámico -->
         <script>
+            // GLOBALES PARA MANEJAR LAS GALERÍAS DE FOTOS
+            window.galerias = {};
+            window.indicesFotos = {};
+
+            // Función para cambiar la foto (se activa con las flechas)
+            function cambiarFoto(event, idPropiedad, direccion) {
+                event.preventDefault(); 
+                
+                const imagenes = window.galerias[idPropiedad];
+                if (!imagenes || imagenes.length <= 1) return;
+
+                let actual = window.indicesFotos[idPropiedad] || 0;
+                actual += direccion;
+
+                // Carrusel infinito (si pasa la última, vuelve a la primera y viceversa)
+                if (actual < 0) actual = imagenes.length - 1;
+                if (actual >= imagenes.length) actual = 0;
+
+                window.indicesFotos[idPropiedad] = actual;
+
+                const divImagen = document.getElementById(`img-prop-${idPropiedad}`);
+                const fotoSegura = encodeURI(imagenes[actual]);
+                divImagen.style.backgroundImage = `linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%), url('uploads/${fotoSegura}')`;
+            }
+
             document.addEventListener("DOMContentLoaded", () => {
                 cargarPropiedades('propiedades');
             });
 
-            // --- Lógica para cargar las propiedades en index.html ---
             function cargarPropiedades(url) {
               fetch(url)
                 .then(response => response.json())
@@ -107,10 +131,29 @@
                       pisoHTML = ` - ${prop.piso}`;
                     }
 
+                    // LÓGICA DE LA GALERÍA
+                    let estiloFondo = 'background-color: #f4f4f4;';
+                    let controlesGaleria = '';
+                    
+                    if (prop.imagenes && prop.imagenes.length > 0) {
+                        // Guardamos las imágenes en la memoria del navegador
+                        window.galerias[prop.idPropiedad] = prop.imagenes;
+                        window.indicesFotos[prop.idPropiedad] = 0;
+                        
+                        let fotoSegura = encodeURI(prop.imagenes[0]);
+                        estiloFondo = `background-image: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%), url('uploads/${fotoSegura}'); background-size: cover; background-position: center; transition: background-image 0.3s ease-in-out;`;
+                        
+                        // Si hay más de 1 foto, agregamos las flechas de navegación
+                        if (prop.imagenes.length > 1) {
+                            controlesGaleria = `
+                                <button onclick="cambiarFoto(event, ${prop.idPropiedad}, -1)" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-weight: bold; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">❮</button>
+                                <button onclick="cambiarFoto(event, ${prop.idPropiedad}, 1)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-weight: bold; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">❯</button>
+                            `;
+                        }
+                    }
+
                     const tarjeta = document.createElement("div");
                     tarjeta.className = "propiedad-card";
-                    
-                    // Forzamos los estilos para recuperar el fondo blanco y que no parezca texto suelto
                     tarjeta.style.backgroundColor = "#ffffff";
                     tarjeta.style.borderRadius = "12px";
                     tarjeta.style.boxShadow = "0 4px 6px rgba(0,0,0,0.05)";
@@ -119,21 +162,20 @@
                     tarjeta.style.display = "flex";
                     tarjeta.style.flexDirection = "column";
 
-                    // Calculamos las estrellas (si no tiene, muestra "Sin reseñas")
                     const estrellasHTML = prop.promedioEstrellas > 0 
                         ? `⭐ ${prop.promedioEstrellas}` 
                         : `<span style="font-size:0.8rem; color:#999;">Sin reseñas</span>`;
 
                     tarjeta.innerHTML = `
-                      <!-- Placeholder de imagen (Acá va a ir la galería de fotos) -->
-                      <div class="imagen-placeholder" style="background-color: #f4f4f4; height: 160px; padding: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #eaeaea;">
-                          <span class="badge" style="background-color: #d1e7dd; color: #0f5132; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem;">Nuevo</span>
-                          <button onclick="toggleFavorito(${prop.idPropiedad}, this)" class="btn-favorito" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0;">🤍</button>
+                      <!-- Contenedor relativo de la imagen para posicionar las flechas -->
+                      <div id="img-prop-${prop.idPropiedad}" class="imagen-placeholder" style="${estiloFondo} height: 180px; padding: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #eaeaea; position: relative;">
+                          <span class="badge" style="background-color: #d1e7dd; color: #0f5132; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 2;">Nuevo</span>
+                          <button onclick="toggleFavorito(${prop.idPropiedad}, this)" class="btn-favorito" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5)); z-index: 2;">🤍</button>
+                          
+                          ${controlesGaleria}
                       </div>
                       
-                      <!-- Información de la propiedad -->
                       <div class="info" style="padding: 16px; display: flex; flex-direction: column; flex-grow: 1;">
-                          
                           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                               <div class="ubicacion" style="color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">${prop.ciudad}, ${prop.provincia}</div>
                               <div class="estrellas" style="font-size: 0.9rem;">${estrellasHTML}</div>
@@ -159,7 +201,7 @@
                 })
                 .catch(err => {
                   console.error("Error cargando propiedades:", err);
-                  document.getElementById("resultados").innerHTML = '<p style="color:red;">Error al cargar datos.</p>';
+                  document.getElementById("resultados").innerHTML = '<p style="color:red;">Error de conexión con el servidor. Revisá la consola (F12).</p>';
                 });
             }
 

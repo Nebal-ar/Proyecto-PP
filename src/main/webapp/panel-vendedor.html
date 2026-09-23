@@ -115,6 +115,12 @@
       <label>Descripción</label>
       <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
 
+      <!-- NUEVO: Galería de fotos -->
+      <h3 style="margin-bottom: 1rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Galería de Fotos</h3>
+      <label style="color: #444; font-weight: bold;">Seleccioná las fotos para mostrar a los huéspedes</label>
+      <p style="font-size: 0.85rem; color: var(--gris); margin-bottom: 0.5rem; margin-top: 0;">Mantené presionada la tecla Ctrl (o arrastrá el mouse) para seleccionar varias imágenes a la vez.</p>
+      <input type="file" id="fotos" name="fotos" accept="image/*" multiple required style="margin-bottom: 2rem;">
+
       <button type="submit" class="btn btn-block">Enviar para verificación</button>
     </form>
 

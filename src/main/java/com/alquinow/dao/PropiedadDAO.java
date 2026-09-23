@@ -260,5 +260,31 @@ public class PropiedadDAO {
         }
         return false;
     }
+    
+    // Inserta una imagen asociada a una propiedad
+    public boolean agregarImagen(int idPropiedad, String ruta, boolean esPrincipal) throws SQLException {
+        String sql = "INSERT INTO propiedad_imagen (id_propiedad_fk, ruta_archivo, es_principal) VALUES (?, ?, ?)";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idPropiedad);
+            ps.setString(2, ruta);
+            ps.setBoolean(3, esPrincipal);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    // Trae todas las fotos de una propiedad específica
+    public List<String> obtenerImagenesPorPropiedad(int idPropiedad) throws SQLException {
+        List<String> lista = new ArrayList<>();
+        String sql = "SELECT ruta_archivo FROM propiedad_imagen WHERE id_propiedad_fk = ? ORDER BY es_principal DESC";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idPropiedad);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(rs.getString("ruta_archivo"));
+                }
+            }
+        }
+        return lista;
+    }
 }
 

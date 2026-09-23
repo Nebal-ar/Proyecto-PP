@@ -17,6 +17,7 @@ com\alquinow\servlet\LoginServlet.class
 com\alquinow\modelo\Resena.class
 com\alquinow\util\EmailUtil$1.class
 com\alquinow\servlet\RegistroServlet.class
+com\alquinow\modelo\PropiedadImagen.class
 com\alquinow\dao\ResenaDAO.class
 com\alquinow\servlet\MisFavoritosServlet.class
 com\alquinow\util\Conexion.class

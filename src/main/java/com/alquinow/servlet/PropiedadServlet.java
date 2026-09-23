@@ -51,8 +51,7 @@ public class PropiedadServlet extends HttpServlet {
             Integer personasMin = parseEntero(req.getParameter("personasMin"));
 
             List<Propiedad> lista;
-            if (tieneAlgo(ciudad) || tieneAlgo(provincia)
-                    || precioMax != null || personasMin != null) {
+            if (tieneAlgo(ciudad) || tieneAlgo(provincia) || precioMax != null || personasMin != null) {
                 lista = propiedadDAO.buscar(ciudad, provincia, precioMax, personasMin);
             } else {
                 lista = propiedadDAO.listarTodas();
@@ -99,6 +98,7 @@ public class PropiedadServlet extends HttpServlet {
                 uploadDir.mkdirs();
             }
 
+            // Documentos de verificación
             Part partComprobante = req.getPart("comprobante");
             String nombreComprobante = null;
             if (partComprobante != null && partComprobante.getSize() > 0) {
@@ -115,6 +115,7 @@ public class PropiedadServlet extends HttpServlet {
                 partFoto.write(uploadPath + File.separator + nombreFoto);
             }
 
+            // Datos de la propiedad
             Propiedad p = new Propiedad();
             p.setIdVendedorFk(u.getIdUsuario());
             p.setCalle(req.getParameter("calle"));
@@ -130,7 +131,6 @@ public class PropiedadServlet extends HttpServlet {
             p.setDescripcion(req.getParameter("descripcion"));
             p.setDiasCancelacionSinPenalizacion(parseEntero(req.getParameter("dias_cancelacion_sin_penalizacion")));
             
-            // SE AGREGA LA CAPTURA DEL PORCENTAJE DE SEÑA
             Integer sena = parseEntero(req.getParameter("porcentaje_sena"));
             p.setPorcentajeSena(sena != null ? sena : 30);
             
@@ -151,8 +151,27 @@ public class PropiedadServlet extends HttpServlet {
                 return; 
             }
             
-            int id = propiedadDAO.crear(p);
-            out.print("{\"ok\":" + (id > 0) + ",\"id\":" + id + "}");
+            // PRIMERO CREAMOS LA PROPIEDAD PARA OBTENER EL ID
+            int idPropiedad = propiedadDAO.crear(p);
+            
+            if (idPropiedad > 0) {
+                // AHORA GUARDAMOS LA GALERÍA DE IMÁGENES
+                boolean primeraFoto = true;
+                for (Part part : req.getParts()) {
+                    if ("fotos".equals(part.getName()) && part.getSize() > 0) {
+                        String fName = Paths.get(part.getSubmittedFileName()).getFileName().toString();
+                        String nFoto = System.currentTimeMillis() + "_gal_" + fName;
+                        part.write(uploadPath + File.separator + nFoto);
+                        
+                        // Guardamos en la base de datos (la primera es la principal)
+                        propiedadDAO.agregarImagen(idPropiedad, nFoto, primeraFoto);
+                        primeraFoto = false;
+                    }
+                }
+                out.print("{\"ok\":true,\"id\":" + idPropiedad + "}");
+            } else {
+                out.print("{\"ok\":false, \"mensaje\":\"Error al crear la propiedad.\"}");
+            }
 
         } catch (Exception e) {
             e.printStackTrace(); 
@@ -183,6 +202,19 @@ public class PropiedadServlet extends HttpServlet {
     private String propiedadAJson(Propiedad p) {
         String estadoV = p.getEstadoVerificacion() != null ? p.getEstadoVerificacion() : "pendiente";
         
+        // OBTENEMOS LAS IMÁGENES DE LA BASE DE DATOS
+        StringBuilder fotosJson = new StringBuilder("[");
+        try {
+            List<String> fotos = propiedadDAO.obtenerImagenesPorPropiedad(p.getIdPropiedad());
+            for (int i = 0; i < fotos.size(); i++) {
+                fotosJson.append("\"").append(escapar(fotos.get(i))).append("\"");
+                if (i < fotos.size() - 1) fotosJson.append(",");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        fotosJson.append("]");
+        
         return "{"
             + "\"idPropiedad\":" + p.getIdPropiedad() + ","
             + "\"idVendedor\":" + p.getIdVendedorFk() + ","
@@ -199,7 +231,8 @@ public class PropiedadServlet extends HttpServlet {
             + "\"promedioEstrellas\":" + (p.getPromedioEstrellas() != null ? p.getPromedioEstrellas() : 0.0) + ","
             + "\"estadoVerificacion\":\"" + escapar(estadoV) + "\","
             + "\"motivoRechazo\":\"" + escapar(p.getMotivoRechazo()) + "\","
-            + "\"porcentajeSena\":" + p.getPorcentajeSena()  // SE AGREGA AL JSON
+            + "\"porcentajeSena\":" + p.getPorcentajeSena() + ","
+            + "\"imagenes\":" + fotosJson.toString() // INCLUIMOS EL ARRAY DE IMÁGENES
             + "}";
     }
 

@@ -112,8 +112,8 @@
       <label>Metros cuadrados</label>
       <input type="number" id="metros_cuadrados" name="metros_cuadrados" min="1" step="1" placeholder="Ej: 50" required>
 
-      <label>Descripción</label>
-      <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
+      <label>Descripción <span style="color: #888; font-weight: normal; font-size: 0.85rem;">(Opcional)</span></label>
+      <textarea id="descripcion" name="descripcion" rows="3"></textarea>
 
       <!-- NUEVO: Galería de fotos -->
       <h3 style="margin-bottom: 1rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Galería de Fotos</h3>
@@ -132,6 +132,31 @@
       </div>
     </section>
   </main>
+
+  <!-- VENTANA FLOTANTE PARA EDITAR -->
+  <div id="modalEdicion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;">
+      <div style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+          <h2 style="margin-top: 0; margin-bottom: 1.5rem; color: #333;">Editar Propiedad</h2>
+          
+          <form id="formEditar" onsubmit="event.preventDefault(); guardarEdicion();">
+              <input type="hidden" id="edit_id" name="id">
+              
+              <label style="font-weight: bold;">Precio por noche ($)</label>
+              <input type="number" id="edit_precio" name="precio" min="1" step="1" required style="width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px;">
+              
+              <label style="font-weight: bold;">Porcentaje de seña (%)</label>
+              <input type="number" id="edit_sena" name="sena" min="0" max="100" required style="width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px;">
+              
+              <label style="font-weight: bold;">Descripción</label>
+              <textarea id="edit_descripcion" name="descripcion" rows="4" style="width: 100%; padding: 10px; margin-bottom: 1.5rem; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
+              
+              <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                  <button type="button" onclick="cerrarModal()" class="btn" style="background-color: #6c757d; padding: 0.6rem 1.2rem;">Cancelar</button>
+                  <button type="submit" class="btn" style="background-color: #28a745; padding: 0.6rem 1.2rem;">Guardar Cambios</button>
+              </div>
+          </form>
+      </div>
+  </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -245,6 +270,10 @@
                     tarjeta.style.opacity = "0.85";
                 }
 
+                // Codificamos la descripción para que los saltos de línea no rompan el botón de Editar
+                const descCodificada = encodeURIComponent(prop.descripcion || '');
+                const sena = prop.porcentajeSena || 30;
+
                 tarjeta.innerHTML = `
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
                     <h3 style="margin: 0; color: #333;">${prop.calle} ${prop.altura}${extraPiso}</h3>
@@ -260,7 +289,10 @@
                     <p style="color: var(--brasa); font-weight: bold; font-size: 1.2rem; margin: 0;">
                       $${prop.precioPorNoche} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">/ noche</span>
                     </p>
-                    <button onclick="eliminarPropiedad(${prop.idPropiedad || prop.id})" class="btn" style="background-color: #dc3545; padding: 0.5rem 1rem;">Eliminar</button>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="abrirModalEdicion(${prop.idPropiedad || prop.id}, ${prop.precioPorNoche}, ${sena}, '${descCodificada}')" class="btn" style="background-color: #007bff; padding: 0.5rem 1rem;">Editar</button>
+                        <button onclick="eliminarPropiedad(${prop.idPropiedad || prop.id})" class="btn" style="background-color: #dc3545; padding: 0.5rem 1rem;">Eliminar</button>
+                    </div>
                   </div>
                 `;
                 contenedor.appendChild(tarjeta);
@@ -271,6 +303,46 @@
           console.error("Error al cargar propiedades:", err);
           document.getElementById("mis-publicaciones").innerHTML = '<p style="color: red;">Error al cargar tus publicaciones.</p>';
         });
+    }
+
+    // --- FUNCIONES DE EDICIÓN RÁPIDA ---
+    function abrirModalEdicion(id, precio, sena, descCodificada) {
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_precio').value = precio;
+        document.getElementById('edit_sena').value = sena;
+        document.getElementById('edit_descripcion').value = decodeURIComponent(descCodificada);
+        
+        document.getElementById('modalEdicion').style.display = 'flex';
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalEdicion').style.display = 'none';
+    }
+
+    function guardarEdicion() {
+        const params = new URLSearchParams();
+        params.append("accion", "editar");
+        params.append("id", document.getElementById('edit_id').value);
+        params.append("precio", document.getElementById('edit_precio').value);
+        params.append("sena", document.getElementById('edit_sena').value);
+        params.append("descripcion", document.getElementById('edit_descripcion').value);
+
+        fetch("propiedades", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString()
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.ok) {
+                alert("¡Datos actualizados correctamente!");
+                cerrarModal();
+                cargarMisPropiedades(); 
+            } else {
+                alert("No se pudo actualizar la propiedad.");
+            }
+        })
+        .catch(err => console.error("Error al editar:", err));
     }
 
     function eliminarPropiedad(idPropiedad) {

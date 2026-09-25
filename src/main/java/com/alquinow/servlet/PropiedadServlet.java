@@ -91,6 +91,18 @@ public class PropiedadServlet extends HttpServlet {
                 out.print("{\"ok\":" + ok + "}");
                 return;
             }
+            
+            // NUEVO: Atajar la acción de editar
+            if ("editar".equals(accion)) {
+                int id = Integer.parseInt(req.getParameter("id"));
+                BigDecimal precio = new BigDecimal(req.getParameter("precio"));
+                String desc = req.getParameter("descripcion");
+                int sena = Integer.parseInt(req.getParameter("sena"));
+                
+                boolean ok = propiedadDAO.actualizarDatosSeguros(id, precio, desc, sena);
+                out.print("{\"ok\":" + ok + "}");
+                return;
+            }
 
             String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
             File uploadDir = new File(uploadPath);

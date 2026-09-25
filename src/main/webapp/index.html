@@ -222,7 +222,12 @@
             }
 
             function toggleFavorito(idPropiedad, btnElement) {
-                const estadoActual = btnElement.getAttribute('data-estado');
+                // Leemos el estado. Si está vacío o no existe, forzamos a que sea 'vacio'
+                let estadoActual = btnElement.getAttribute('data-estado');
+                if (!estadoActual) {
+                    estadoActual = 'vacio';
+                }
+
                 const accion = estadoActual === 'vacio' ? 'agregar' : 'eliminar';
 
                 const params = new URLSearchParams();

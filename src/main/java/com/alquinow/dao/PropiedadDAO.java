@@ -2,6 +2,7 @@ package com.alquinow.dao;
 
 import com.alquinow.modelo.Propiedad;
 import com.alquinow.util.Conexion;
+import java.math.BigDecimal;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -285,6 +286,18 @@ public class PropiedadDAO {
             }
         }
         return lista;
+    }
+    
+    // Método para la "Edición Rápida" (Solo campos que no requieren re-verificación)
+    public boolean actualizarDatosSeguros(int idPropiedad, BigDecimal precio, String descripcion, int sena) throws SQLException {
+        String sql = "UPDATE propiedad SET precio_por_noche = ?, descripcion = ?, porcentaje_sena = ? WHERE ID_propiedad = ?";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setBigDecimal(1, precio);
+            ps.setString(2, descripcion);
+            ps.setInt(3, sena);
+            ps.setInt(4, idPropiedad);
+            return ps.executeUpdate() > 0;
+        }
     }
 }
 

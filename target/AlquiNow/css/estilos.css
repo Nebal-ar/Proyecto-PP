@@ -187,3 +187,14 @@ th { background: var(--niebla); font-weight: 700; }
   .hero h1 { font-size: 2rem; }
   .nav-links a { margin-left: 0.8rem; font-size: 0.85rem; }
 }
+
+/* Ajuste para los desplegables inteligentes de Tom Select */
+.ts-control {
+    border-radius: 6px !important;
+    padding: 10px 12px !important;
+    border: 1px solid #ccc !important;
+    min-height: 42px;
+}
+.ts-wrapper.multi .ts-control, .ts-wrapper.single .ts-control {
+    background-color: #fff !important;
+}

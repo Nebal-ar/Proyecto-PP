@@ -5,6 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>AlquiNow — Alquileres temporales</title>
         <link rel="stylesheet" href="css/estilos.css">
+
+        <!-- Librería Tom Select -->
+        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     </head>
     <body>
 
@@ -27,12 +31,8 @@
             <!-- Filtros de búsqueda -->
             <div class="filtros">
                 <div class="campo">
-                    <label for="f-ciudad">Ciudad</label>
-                    <input type="text" id="f-ciudad" placeholder="Ej: Neuquén">
-                </div>
-                <div class="campo">
                     <label for="f-provincia">Provincia</label>
-                    <select name="provincia" id="provincia">
+                    <select name="provincia" id="f-provincia">
                         <option value="">Todas las provincias</option>
                         <option value="Buenos Aires">Buenos Aires</option>
                         <option value="CABA">Ciudad Autónoma de Buenos Aires</option>
@@ -61,6 +61,12 @@
                     </select>
                 </div>
                 <div class="campo">
+                    <label for="f-ciudad">Ciudad</label>
+                    <select id="f-ciudad" disabled>
+                        <option value="">Elegí provincia primero...</option>
+                    </select>
+                </div>
+                <div class="campo">
                     <label for="f-precio">Precio máx / noche</label>
                     <input type="number" id="f-precio" placeholder="$" min="1">
                 </div>
@@ -84,23 +90,28 @@
 
         <!-- Lógica para cargar el catálogo y el buscador dinámico -->
         <script>
-            // GLOBALES PARA MANEJAR LAS GALERÍAS DE FOTOS
+            // GLOBALES PARA MANEJAR LAS GALERÍAS DE FOTOS Y BUSCADORES
             window.galerias = {};
             window.indicesFotos = {};
+            let selectFiltroProvincia;
+            let selectFiltroCiudad;
 
             // Función para cambiar la foto (se activa con las flechas)
             function cambiarFoto(event, idPropiedad, direccion) {
-                event.preventDefault(); 
-                
+                event.preventDefault();
+
                 const imagenes = window.galerias[idPropiedad];
-                if (!imagenes || imagenes.length <= 1) return;
+                if (!imagenes || imagenes.length <= 1)
+                    return;
 
                 let actual = window.indicesFotos[idPropiedad] || 0;
                 actual += direccion;
 
                 // Carrusel infinito (si pasa la última, vuelve a la primera y viceversa)
-                if (actual < 0) actual = imagenes.length - 1;
-                if (actual >= imagenes.length) actual = 0;
+                if (actual < 0)
+                    actual = imagenes.length - 1;
+                if (actual >= imagenes.length)
+                    actual = 0;
 
                 window.indicesFotos[idPropiedad] = actual;
 
@@ -111,98 +122,152 @@
 
             document.addEventListener("DOMContentLoaded", () => {
                 cargarPropiedades('propiedades');
+
+                // Inicializamos Tom Select para Ciudad (arranca deshabilitado hasta elegir provincia)
+                selectFiltroCiudad = new TomSelect("#f-ciudad", {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" },
+                    placeholder: "Elegí provincia primero..."
+                });
+                selectFiltroCiudad.disable();
+
+                // Activamos Tom Select en el filtro de provincia y escuchamos cambios
+                selectFiltroProvincia = new TomSelect("#f-provincia", {
+                    create: false,
+                    placeholder: "Todas las provincias",
+                    onChange: function(provinciaElegida) {
+                        cargarCiudadesPorProvincia(provinciaElegida, selectFiltroCiudad);
+                    }
+                });
             });
 
-            function cargarPropiedades(url) {
-              fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                  const contenedor = document.getElementById("resultados");
-                  contenedor.innerHTML = "";
+            // Consulta las ciudades de la provincia seleccionada en la API Georef
+            function cargarCiudadesPorProvincia(provincia, instanciaCiudad) {
+                instanciaCiudad.clear();
+                instanciaCiudad.clearOptions();
 
-                  if (data.length === 0) {
-                    contenedor.innerHTML = '<p style="color:var(--gris);">No se encontraron propiedades.</p>';
+                if (!provincia || provincia === "") {
+                    instanciaCiudad.settings.placeholder = "Elegí provincia primero...";
+                    instanciaCiudad.inputState();
+                    instanciaCiudad.disable();
                     return;
-                  }
+                }
 
-                  data.forEach(prop => {
-                    let pisoHTML = "";
-                    if (prop.piso && prop.piso !== "0" && prop.piso.trim() !== "") {
-                      pisoHTML = ` - ${prop.piso}`;
-                    }
+                const nombreApi = provincia === "CABA" ? "Ciudad Autónoma de Buenos Aires" : provincia;
 
-                    // LÓGICA DE LA GALERÍA
-                    let estiloFondo = 'background-color: #f4f4f4;';
-                    let controlesGaleria = '';
-                    
-                    if (prop.imagenes && prop.imagenes.length > 0) {
-                        // Guardamos las imágenes en la memoria del navegador
-                        window.galerias[prop.idPropiedad] = prop.imagenes;
-                        window.indicesFotos[prop.idPropiedad] = 0;
-                        
-                        let fotoSegura = encodeURI(prop.imagenes[0]);
-                        estiloFondo = `background-image: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%), url('uploads/${fotoSegura}'); background-size: cover; background-position: center; transition: background-image 0.3s ease-in-out;`;
-                        
-                        // Si hay más de 1 foto, agregamos las flechas de navegación
-                        if (prop.imagenes.length > 1) {
-                            controlesGaleria = `
-                                <button onclick="cambiarFoto(event, ${prop.idPropiedad}, -1)" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-weight: bold; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">❮</button>
-                                <button onclick="cambiarFoto(event, ${prop.idPropiedad}, 1)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-weight: bold; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">❯</button>
-                            `;
+                instanciaCiudad.settings.placeholder = "Cargando ciudades...";
+                instanciaCiudad.inputState();
+                instanciaCiudad.disable();
+
+                fetch(`https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(nombreApi)}&campos=nombre&max=1000`)
+                    .then(res => res.json())
+                    .then(data => {
+                        instanciaCiudad.addOption({ value: "", text: "Todas las ciudades" });
+
+                        const nombresUnicos = [...new Set(data.localidades.map(loc => loc.nombre))];
+                        nombresUnicos.forEach(nombre => {
+                            instanciaCiudad.addOption({ value: nombre, text: nombre });
+                        });
+
+                        instanciaCiudad.enable();
+                        instanciaCiudad.settings.placeholder = "Escribí o elegí una ciudad...";
+                        instanciaCiudad.inputState();
+                        instanciaCiudad.refreshOptions(false);
+                    })
+                    .catch(err => {
+                        console.error("Error al cargar ciudades:", err);
+                        instanciaCiudad.settings.placeholder = "Error al cargar ciudades";
+                        instanciaCiudad.inputState();
+                    });
+            }
+
+            function cargarPropiedades(url) {
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const contenedor = document.getElementById("resultados");
+                        contenedor.innerHTML = "";
+                        if (data.length === 0) {
+                            contenedor.innerHTML = '<p style="color:var(--gris);">No se encontraron propiedades.</p>';
+                            return;
                         }
-                    }
 
-                    const tarjeta = document.createElement("div");
-                    tarjeta.className = "propiedad-card";
-                    tarjeta.style.backgroundColor = "#ffffff";
-                    tarjeta.style.borderRadius = "12px";
-                    tarjeta.style.boxShadow = "0 4px 6px rgba(0,0,0,0.05)";
-                    tarjeta.style.border = "1px solid #eaeaea";
-                    tarjeta.style.overflow = "hidden";
-                    tarjeta.style.display = "flex";
-                    tarjeta.style.flexDirection = "column";
+                        data.forEach(prop => {
+                            let pisoHTML = "";
+                            if (prop.piso && prop.piso !== "0" && prop.piso.trim() !== "") {
+                                pisoHTML = ` - ${prop.piso}`;
+                            }
 
-                    const estrellasHTML = prop.promedioEstrellas > 0 
-                        ? `⭐ ${prop.promedioEstrellas}` 
-                        : `<span style="font-size:0.8rem; color:#999;">Sin reseñas</span>`;
+                            // LÓGICA DE LA GALERÍA
+                            let estiloFondo = 'background-color: #f4f4f4;';
+                            let controlesGaleria = '';
+                            if (prop.imagenes && prop.imagenes.length > 0) {
+                                // Guardamos las imágenes en la memoria del navegador
+                                window.galerias[prop.idPropiedad] = prop.imagenes;
+                                window.indicesFotos[prop.idPropiedad] = 0;
+                                let fotoSegura = encodeURI(prop.imagenes[0]);
+                                estiloFondo = `background-image: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%), url('uploads/${fotoSegura}'); background-size: cover; background-position: center; transition: background-image 0.3s ease-in-out;`;
+                                
+                                // Si hay más de 1 foto, agregamos las flechas de navegación
+                                if (prop.imagenes.length > 1) {
+                                    controlesGaleria = `
+                                        <button onclick="cambiarFoto(event, ${prop.idPropiedad}, -1)" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-weight: bold; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">❮</button>
+                                        <button onclick="cambiarFoto(event, ${prop.idPropiedad}, 1)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-weight: bold; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; z-index: 10;">❯</button>
+                                    `;
+                                }
+                            }
 
-                    tarjeta.innerHTML = `
-                      <!-- Contenedor relativo de la imagen para posicionar las flechas -->
-                      <div id="img-prop-${prop.idPropiedad}" class="imagen-placeholder" style="${estiloFondo} height: 180px; padding: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #eaeaea; position: relative;">
-                          <span class="badge" style="background-color: #d1e7dd; color: #0f5132; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 2;">Nuevo</span>
-                          <button onclick="toggleFavorito(${prop.idPropiedad}, this)" class="btn-favorito" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5)); z-index: 2;">🤍</button>
-                          
-                          ${controlesGaleria}
-                      </div>
-                      
-                      <div class="info" style="padding: 16px; display: flex; flex-direction: column; flex-grow: 1;">
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                              <div class="ubicacion" style="color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">${prop.ciudad}, ${prop.provincia}</div>
-                              <div class="estrellas" style="font-size: 0.9rem;">${estrellasHTML}</div>
-                          </div>
-                          
-                          <h3 class="titulo" style="margin: 0 0 8px 0; font-size: 1.15rem; color: #222;">${prop.calle} ${prop.altura}${pisoHTML}</h3>
-                          <div class="capacidad" style="font-size: 0.9rem; margin-bottom: 8px; color: #444;"><strong>Capacidad:</strong> ${prop.cantPersonas} personas</div>
-                          
-                          <p class="descripcion" style="font-size:0.9rem; color:#666; margin-bottom: 16px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${prop.descripcion}</p>
-                          
-                          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 16px; margin-top: auto;">
-                              <div class="precio" style="font-weight: 900; font-size: 1.2rem; color: #111;">
-                                  $${Number(prop.precioPorNoche).toLocaleString('es-AR')} <span style="font-size: 0.85rem; font-weight: normal; color: #666;">/ noche</span>
+                            const tarjeta = document.createElement("div");
+                            tarjeta.className = "propiedad-card";
+                            tarjeta.style.backgroundColor = "#ffffff";
+                            tarjeta.style.borderRadius = "12px";
+                            tarjeta.style.boxShadow = "0 4px 6px rgba(0,0,0,0.05)";
+                            tarjeta.style.border = "1px solid #eaeaea";
+                            tarjeta.style.overflow = "hidden";
+                            tarjeta.style.display = "flex";
+                            tarjeta.style.flexDirection = "column";
+                            
+                            const estrellasHTML = prop.promedioEstrellas > 0
+                                ? `⭐ ${prop.promedioEstrellas}`
+                                : `<span style="font-size:0.8rem; color:#999;">Sin reseñas</span>`;
+                                
+                            tarjeta.innerHTML = `
+                              <!-- Contenedor relativo de la imagen para posicionar las flechas -->
+                              <div id="img-prop-${prop.idPropiedad}" class="imagen-placeholder" style="${estiloFondo} height: 180px; padding: 12px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #eaeaea; position: relative;">
+                                  <span class="badge" style="background-color: #d1e7dd; color: #0f5132; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 2;">Nuevo</span>
+                                  <button onclick="toggleFavorito(${prop.idPropiedad}, this)" class="btn-favorito" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5)); z-index: 2;">🤍</button>
+                                  
+                                  ${controlesGaleria}
                               </div>
-                              <button onclick="window.location.href='reservar.html?id=${prop.idPropiedad}'" style="background-color: #e55e30; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                                  Reservar
-                              </button>
-                          </div>
-                      </div>
-                    `;
-                    contenedor.appendChild(tarjeta);
-                  });
-                })
-                .catch(err => {
-                  console.error("Error cargando propiedades:", err);
-                  document.getElementById("resultados").innerHTML = '<p style="color:red;">Error de conexión con el servidor. Revisá la consola (F12).</p>';
-                });
+                              
+                              <div class="info" style="padding: 16px; display: flex; flex-direction: column; flex-grow: 1;">
+                                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                      <div class="ubicacion" style="color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">${prop.ciudad}, ${prop.provincia}</div>
+                                      <div class="estrellas" style="font-size: 0.9rem;">${estrellasHTML}</div>
+                                  </div>
+                                  
+                                  <h3 class="titulo" style="margin: 0 0 8px 0; font-size: 1.15rem; color: #222;">${prop.calle} ${prop.altura}${pisoHTML}</h3>
+                                  <div class="capacidad" style="font-size: 0.9rem; margin-bottom: 8px; color: #444;"><strong>Capacidad:</strong> ${prop.cantPersonas} personas</div>
+                                  
+                                  <p class="descripcion" style="font-size:0.9rem; color:#666; margin-bottom: 16px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${prop.descripcion}</p>
+                                  
+                                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 16px; margin-top: auto;">
+                                      <div class="precio" style="font-weight: 900; font-size: 1.2rem; color: #111;">
+                                          $${Number(prop.precioPorNoche).toLocaleString('es-AR')} <span style="font-size: 0.85rem; font-weight: normal; color: #666;">/ noche</span>
+                                      </div>
+                                      <button onclick="window.location.href='reservar.html?id=${prop.idPropiedad}'" style="background-color: #e55e30; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                          Reservar
+                                      </button>
+                                  </div>
+                              </div>
+                            `;
+                            contenedor.appendChild(tarjeta);
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Error cargando propiedades:", err);
+                        document.getElementById("resultados").innerHTML = '<p style="color:red;">Error de conexión con el servidor. Revisá la consola (F12).</p>';
+                    });
             }
 
             function buscar() {

@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel del anfitrión — AlquiNow</title>
   <link rel="stylesheet" href="css/estilos.css">
+  
+  <!-- Librería Tom Select -->
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 </head>
 <body>
 
@@ -40,9 +44,6 @@
 
       <label>Altura</label>
       <input type="number" id="altura" name="altura" min="1" step="1" placeholder="Ej: 542" required>
-
-      <label>Ciudad</label>
-      <input type="text" id="ciudad" name="ciudad" required>
       
       <!-- Input oculto de piso -->
       <input type="hidden" id="piso" name="piso" value="">
@@ -91,10 +92,15 @@
         <option value="Tucumán">Tucumán</option>
       </select>
 
-      <label>Precio por noche ($)</label>
+      <label style="margin-top: 1rem;">Ciudad</label>
+      <select id="ciudad" name="ciudad" required disabled>
+        <option value="">Primero seleccioná una provincia...</option>
+      </select>
+
+      <label style="margin-top: 1rem;">Precio por noche ($)</label>
       <input type="number" id="precio_por_noche" name="precio_por_noche" min="1" step="1" placeholder="Ej: 70000" required>
 
-      <!-- NUEVO: Configuraciones financieras -->
+      <!-- Configuraciones financieras -->
       <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 1rem; border: 1px solid #ffeeba;">
           <h4 style="margin-top: 0; margin-bottom: 10px; color: #856404;">Políticas de Alquiler</h4>
           
@@ -115,7 +121,7 @@
       <label>Descripción <span style="color: #888; font-weight: normal; font-size: 0.85rem;">(Opcional)</span></label>
       <textarea id="descripcion" name="descripcion" rows="3"></textarea>
 
-      <!-- NUEVO: Galería de fotos -->
+      <!-- Galería de fotos -->
       <h3 style="margin-bottom: 1rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Galería de Fotos</h3>
       <label style="color: #444; font-weight: bold;">Seleccioná las fotos para mostrar a los huéspedes</label>
       <p style="font-size: 0.85rem; color: var(--gris); margin-bottom: 0.5rem; margin-top: 0;">Mantené presionada la tecla Ctrl (o arrastrá el mouse) para seleccionar varias imágenes a la vez.</p>
@@ -124,7 +130,7 @@
       <button type="submit" class="btn btn-block">Enviar para verificación</button>
     </form>
 
-    <!-- SECCIÓN NUEVA: MIS ANUNCIOS ACTIVOS -->
+    <!-- SECCIÓN: MIS ANUNCIOS ACTIVOS -->
     <section style="margin-top: 3rem;">
       <h2 style="margin-bottom: 1.5rem;">Mis anuncios activos</h2>
       <div id="mis-publicaciones" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -159,8 +165,61 @@
   </div>
 
   <script>
+    let selectVendedorProvincia;
+    let selectVendedorCiudad;
+
     document.addEventListener("DOMContentLoaded", () => {
       cargarMisPropiedades();
+
+      // Inicializamos Tom Select para Ciudad (arranca bloqueado hasta elegir provincia)
+      selectVendedorCiudad = new TomSelect("#ciudad", {
+          create: false,
+          sortField: { field: "text", direction: "asc" },
+          placeholder: "Primero seleccioná una provincia..."
+      });
+      selectVendedorCiudad.disable();
+
+      // Inicializamos Tom Select en el desplegable de Provincia y conectamos la API Georef
+      selectVendedorProvincia = new TomSelect("#provincia", {
+          create: false,
+          sortField: { field: "text", direction: "asc" },
+          placeholder: "Escribí o seleccioná una provincia...",
+          onChange: function(provinciaElegida) {
+              selectVendedorCiudad.clear();
+              selectVendedorCiudad.clearOptions();
+
+              if (!provinciaElegida) {
+                  selectVendedorCiudad.settings.placeholder = "Primero seleccioná una provincia...";
+                  selectVendedorCiudad.inputState();
+                  selectVendedorCiudad.disable();
+                  return;
+              }
+
+              const nombreApi = provinciaElegida === "CABA" ? "Ciudad Autónoma de Buenos Aires" : provinciaElegida;
+              selectVendedorCiudad.settings.placeholder = "Cargando ciudades...";
+              selectVendedorCiudad.inputState();
+              selectVendedorCiudad.disable();
+
+              fetch(`https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(nombreApi)}&campos=nombre&max=1000`)
+                  .then(res => res.json())
+                  .then(data => {
+                      const nombresUnicos = [...new Set(data.localidades.map(loc => loc.nombre))];
+                      nombresUnicos.forEach(nombre => {
+                          selectVendedorCiudad.addOption({ value: nombre, text: nombre });
+                      });
+
+                      selectVendedorCiudad.enable();
+                      selectVendedorCiudad.settings.placeholder = "Escribí o seleccioná la ciudad...";
+                      selectVendedorCiudad.inputState();
+                      selectVendedorCiudad.refreshOptions(false);
+                  })
+                  .catch(err => {
+                      console.error("Error al cargar ciudades:", err);
+                      selectVendedorCiudad.settings.placeholder = "Error al cargar ciudades";
+                      selectVendedorCiudad.inputState();
+                  });
+          }
+      });
     });
 
     function actualizarPiso() {
@@ -202,6 +261,11 @@
         if (res.ok) {
           msg.innerHTML = '<div class="alerta alerta-ok">¡Propiedad enviada! Un administrador la revisará a la brevedad.</div>';
           formElement.reset(); 
+          // Reiniciamos también los buscadores de provincia y ciudad
+          selectVendedorProvincia.clear();
+          selectVendedorCiudad.clear();
+          selectVendedorCiudad.clearOptions();
+          selectVendedorCiudad.disable();
           actualizarPiso(); 
           cargarMisPropiedades(); 
         } else {

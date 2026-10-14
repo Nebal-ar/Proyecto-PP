@@ -1,3 +1,5 @@
+CREATE DATABASE  IF NOT EXISTS `alquinow` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `alquinow`;
 -- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
 -- Host: localhost    Database: alquinow
@@ -57,7 +59,7 @@ CREATE TABLE `disponibilidad` (
   KEY `idx_disponibilidad_fecha` (`fecha`),
   KEY `idx_disponibilidad_propiedad` (`ID_propiedad_fk`),
   CONSTRAINT `disponibilidad_ibfk_1` FOREIGN KEY (`ID_propiedad_fk`) REFERENCES `propiedad` (`ID_propiedad`)
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -66,7 +68,7 @@ CREATE TABLE `disponibilidad` (
 
 LOCK TABLES `disponibilidad` WRITE;
 /*!40000 ALTER TABLE `disponibilidad` DISABLE KEYS */;
-INSERT INTO `disponibilidad` VALUES (1,1,'2026-08-25','Ocupado'),(2,1,'2026-08-26','Ocupado'),(3,1,'2026-08-27','Ocupado'),(4,1,'2026-10-10','Ocupado'),(5,1,'2026-10-11','Ocupado'),(6,1,'2026-10-12','Ocupado'),(7,1,'2026-10-13','Ocupado'),(8,1,'2026-10-14','Ocupado'),(9,1,'2026-11-11','Ocupado'),(10,1,'2026-11-12','Ocupado'),(11,1,'2026-11-13','Ocupado'),(12,1,'2026-11-14','Ocupado'),(13,1,'2026-11-15','Ocupado'),(14,1,'2026-12-01','Ocupado'),(15,1,'2026-12-02','Ocupado'),(16,1,'2026-12-03','Ocupado'),(17,1,'2026-12-04','Ocupado'),(18,2,'2026-12-10','Ocupado'),(19,2,'2026-12-11','Ocupado'),(20,2,'2026-12-12','Ocupado'),(21,2,'2026-12-13','Ocupado'),(22,2,'2026-12-14','Ocupado'),(23,1,'2026-12-12','Ocupado'),(24,1,'2026-12-13','Ocupado'),(25,1,'2026-12-14','Ocupado'),(26,1,'2026-12-15','Ocupado'),(27,1,'2026-12-16','Ocupado'),(28,1,'2026-12-14','Ocupado'),(29,1,'2026-12-15','Ocupado'),(30,1,'2026-12-16','Ocupado'),(31,1,'2026-12-17','Ocupado'),(32,1,'2026-12-14','Ocupado'),(33,1,'2026-12-15','Ocupado'),(34,1,'2026-12-16','Ocupado'),(35,1,'2026-12-17','Ocupado');
+INSERT INTO `disponibilidad` VALUES (1,1,'2026-08-25','Ocupado'),(2,1,'2026-08-26','Ocupado'),(3,1,'2026-08-27','Ocupado'),(4,1,'2026-10-10','Ocupado'),(5,1,'2026-10-11','Ocupado'),(6,1,'2026-10-12','Ocupado'),(7,1,'2026-10-13','Ocupado'),(8,1,'2026-10-14','Ocupado'),(9,1,'2026-11-11','Ocupado'),(10,1,'2026-11-12','Ocupado'),(11,1,'2026-11-13','Ocupado'),(12,1,'2026-11-14','Ocupado'),(13,1,'2026-11-15','Ocupado'),(14,1,'2026-12-01','Ocupado'),(15,1,'2026-12-02','Ocupado'),(16,1,'2026-12-03','Ocupado'),(17,1,'2026-12-04','Ocupado'),(18,2,'2026-12-10','Ocupado'),(19,2,'2026-12-11','Ocupado'),(20,2,'2026-12-12','Ocupado'),(21,2,'2026-12-13','Ocupado'),(22,2,'2026-12-14','Ocupado'),(23,1,'2026-12-12','Ocupado'),(24,1,'2026-12-13','Ocupado'),(25,1,'2026-12-14','Ocupado'),(26,1,'2026-12-15','Ocupado'),(27,1,'2026-12-16','Ocupado'),(28,1,'2026-12-14','Ocupado'),(29,1,'2026-12-15','Ocupado'),(30,1,'2026-12-16','Ocupado'),(31,1,'2026-12-17','Ocupado'),(32,1,'2026-12-14','Ocupado'),(33,1,'2026-12-15','Ocupado'),(34,1,'2026-12-16','Ocupado'),(35,1,'2026-12-17','Ocupado'),(36,1,'2026-09-09','Ocupado'),(37,5,'2026-09-11','Ocupado');
 /*!40000 ALTER TABLE `disponibilidad` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -140,7 +142,7 @@ CREATE TABLE `lista_deseos` (
   KEY `ID_propiedad_fk` (`ID_propiedad_fk`),
   CONSTRAINT `lista_deseos_ibfk_1` FOREIGN KEY (`ID_comprador_fk`) REFERENCES `comprador` (`ID_usuario`),
   CONSTRAINT `lista_deseos_ibfk_2` FOREIGN KEY (`ID_propiedad_fk`) REFERENCES `propiedad` (`ID_propiedad`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -149,7 +151,7 @@ CREATE TABLE `lista_deseos` (
 
 LOCK TABLES `lista_deseos` WRITE;
 /*!40000 ALTER TABLE `lista_deseos` DISABLE KEYS */;
-INSERT INTO `lista_deseos` VALUES (16,7,1,'2026-09-08');
+INSERT INTO `lista_deseos` VALUES (23,7,14,'2026-09-25');
 /*!40000 ALTER TABLE `lista_deseos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -173,17 +175,22 @@ CREATE TABLE `propiedad` (
   `precio_por_noche` decimal(10,2) DEFAULT NULL,
   `metros_cuadrados` int DEFAULT NULL,
   `cant_personas` int DEFAULT NULL,
-  `piso` int DEFAULT NULL,
+  `piso` varchar(50) DEFAULT NULL,
   `descripcion` text,
-  `disponibilidad_inmediata` tinyint DEFAULT '0',
   `dias_cancelacion_sin_penalizacion` int DEFAULT NULL,
+  `porcentaje_sena` int DEFAULT '50',
+  `horas_limite_pago` int DEFAULT '24',
+  `estado_verificacion` varchar(20) DEFAULT 'pendiente',
+  `comprobante_titularidad` varchar(255) DEFAULT NULL,
+  `foto_verificacion` varchar(255) DEFAULT NULL,
+  `motivo_rechazo` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ID_propiedad`),
   KEY `ID_vendedor_fk` (`ID_vendedor_fk`),
   KEY `idx_propiedad_precio` (`precio_por_noche`),
   KEY `idx_propiedad_capacidad` (`cant_personas`),
   KEY `idx_propiedad_ubicacion` (`ciudad`,`provincia`),
   CONSTRAINT `propiedad_ibfk_1` FOREIGN KEY (`ID_vendedor_fk`) REFERENCES `vendedor` (`ID_usuario`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -192,8 +199,36 @@ CREATE TABLE `propiedad` (
 
 LOCK TABLES `propiedad` WRITE;
 /*!40000 ALTER TABLE `propiedad` DISABLE KEYS */;
-INSERT INTO `propiedad` VALUES (1,NULL,NULL,'Av. Alem',1253,NULL,'Bahía Blanca','Buenos Aires','Argentina',25000.00,NULL,4,NULL,'Departamento de prueba para validar el sistema de reservas.',0,NULL),(2,2,NULL,'Martiniano Rodriguez ',137,NULL,'Bahia Blanca','Buenos Aires','Argentina',50.00,30,3,NULL,'Departamento nuevo en zona centro',1,NULL),(3,7,NULL,'Vieytes',542,NULL,'Bahia Blanca','Buenos Aires','Argentina',70.00,35,2,NULL,'Departamento amoblado nuevo',1,NULL),(4,7,NULL,'Vieytes',542,NULL,'Bahia Blanca','Buenos Aires','Argentina',70.00,35,2,NULL,'Departamento amoblado nuevo',1,NULL),(5,7,NULL,'Vieytes',542,NULL,'Bahia Blanca','Buenos Aires','Argentina',70.00,35,2,NULL,'Departamento amoblado nuevo',1,NULL);
+INSERT INTO `propiedad` VALUES (1,NULL,NULL,'Av. Alem',1253,NULL,'Bahía Blanca','Buenos Aires','Argentina',25000.00,NULL,4,NULL,'Departamento de prueba para validar el sistema de reservas.',NULL,30,24,'aprobada',NULL,NULL,NULL),(2,2,NULL,'Martiniano Rodriguez ',137,NULL,'Bahia Blanca','Buenos Aires','Argentina',50.00,30,3,NULL,'Departamento nuevo en zona centro',NULL,30,24,'aprobada',NULL,NULL,NULL),(5,7,NULL,'Vieytes',542,NULL,'Bahia Blanca','Buenos Aires','Argentina',70.00,35,2,NULL,'Departamento amoblado nuevo',NULL,30,24,'aprobada',NULL,NULL,NULL),(6,7,NULL,'Sarmiento',422,NULL,'Santa rosa','La Pampa','Argentina',70000.00,50,4,NULL,'',NULL,30,24,'aprobada',NULL,NULL,NULL),(8,7,NULL,'Villarino',543,NULL,'Bariloche','Río Negro','Argentina',100000.00,40,3,NULL,'',NULL,30,24,'aprobada',NULL,NULL,NULL),(9,7,NULL,'Zelarrayan',2000,NULL,'Bahia Blanca','Buenos Aires','Argentina',300000.00,45,2,'Piso 3 - Dpto B','',NULL,30,24,'aprobada',NULL,NULL,NULL),(10,7,NULL,'25 de Mayo',430,NULL,'Cordoba','Córdoba','Argentina',90000.00,40,3,'','Nuevo',NULL,30,24,'aprobada','1789580874221_comp_Notas_sistemas.png','1789580874221_foto_prediccion-mundial-2026-grupos.png',NULL),(11,7,NULL,'17 de Agosto',1240,NULL,'Tigre','Buenos Aires','Argentina',100000.00,30,1,'Piso 5 - Dpto C','Facha',5,10,24,'aprobada','1789704914854_comp_Notas_sistemas.png','1789704914879_foto_IMG_20260423_165044993_HDR.jpg',NULL),(14,7,NULL,'SixSeven',1320,NULL,'Aura','La Rioja','Argentina',40000.00,30,1,'','Departamento con mucha aura',5,10,24,'aprobada','1790138204993_comp_Captura de pantalla 2024-11-03 164132.png','1790138205006_foto_Captura de pantalla 2024-11-05 184857.png',NULL);
 /*!40000 ALTER TABLE `propiedad` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `propiedad_imagen`
+--
+
+DROP TABLE IF EXISTS `propiedad_imagen`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `propiedad_imagen` (
+  `id_imagen` int NOT NULL AUTO_INCREMENT,
+  `id_propiedad_fk` int NOT NULL,
+  `ruta_archivo` varchar(255) NOT NULL,
+  `es_principal` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`id_imagen`),
+  KEY `id_propiedad_fk` (`id_propiedad_fk`),
+  CONSTRAINT `propiedad_imagen_ibfk_1` FOREIGN KEY (`id_propiedad_fk`) REFERENCES `propiedad` (`ID_propiedad`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `propiedad_imagen`
+--
+
+LOCK TABLES `propiedad_imagen` WRITE;
+/*!40000 ALTER TABLE `propiedad_imagen` DISABLE KEYS */;
+INSERT INTO `propiedad_imagen` VALUES (4,14,'1790138205042_gal_1073f831c30904ac519337d8f68d4f24.webp',1),(5,14,'1790138205042_gal_H-UalQ6r-yuvHiGsnP0eGb8W6_gk77j_AjG9YYZmt-A.webp',0);
+/*!40000 ALTER TABLE `propiedad_imagen` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -210,13 +245,16 @@ CREATE TABLE `resena` (
   `puntuacion` int DEFAULT NULL,
   `comentario` text,
   `fecha` date DEFAULT NULL,
+  `id_reserva_fk` int DEFAULT NULL,
   PRIMARY KEY (`ID_resena`),
+  UNIQUE KEY `id_reserva_fk` (`id_reserva_fk`),
   KEY `ID_comprador_fk` (`ID_comprador_fk`),
   KEY `idx_resena_propiedad` (`ID_propiedad_fk`),
+  CONSTRAINT `fk_resena_reserva` FOREIGN KEY (`id_reserva_fk`) REFERENCES `reserva` (`ID_reserva`),
   CONSTRAINT `resena_ibfk_1` FOREIGN KEY (`ID_comprador_fk`) REFERENCES `comprador` (`ID_usuario`),
   CONSTRAINT `resena_ibfk_2` FOREIGN KEY (`ID_propiedad_fk`) REFERENCES `propiedad` (`ID_propiedad`),
   CONSTRAINT `resena_chk_1` CHECK ((`puntuacion` between 1 and 5))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -225,6 +263,7 @@ CREATE TABLE `resena` (
 
 LOCK TABLES `resena` WRITE;
 /*!40000 ALTER TABLE `resena` DISABLE KEYS */;
+INSERT INTO `resena` VALUES (1,7,1,5,'Buena atención',NULL,10),(2,7,5,1,'malooooooo',NULL,11);
 /*!40000 ALTER TABLE `resena` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -246,13 +285,16 @@ CREATE TABLE `reserva` (
   `fecha_reserva` date DEFAULT NULL,
   `dias_cancelacion_aplicados` int DEFAULT NULL,
   `fecha_limite_cancelacion` date DEFAULT NULL,
+  `fecha_limite_pago` datetime DEFAULT NULL,
+  `monto_pagado` decimal(10,2) DEFAULT '0.00',
+  `porcentaje_sena_aplicado` int DEFAULT '0',
   PRIMARY KEY (`ID_reserva`),
   KEY `ID_comprador_fk` (`ID_comprador_fk`),
   KEY `idx_reserva_propiedad` (`ID_propiedad_fk`),
   KEY `idx_reserva_fechas` (`fecha_inicio`,`fecha_final`),
   CONSTRAINT `reserva_ibfk_1` FOREIGN KEY (`ID_comprador_fk`) REFERENCES `comprador` (`ID_usuario`),
   CONSTRAINT `reserva_ibfk_2` FOREIGN KEY (`ID_propiedad_fk`) REFERENCES `propiedad` (`ID_propiedad`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -261,7 +303,7 @@ CREATE TABLE `reserva` (
 
 LOCK TABLES `reserva` WRITE;
 /*!40000 ALTER TABLE `reserva` DISABLE KEYS */;
-INSERT INTO `reserva` VALUES (4,1,1,'2026-11-11','2026-11-16','pendiente',125000.00,'2026-08-22',NULL,NULL),(5,1,1,'2026-12-01','2026-12-05','pendiente',100000.00,'2026-08-23',NULL,NULL),(6,1,2,'2026-12-10','2026-12-15','pendiente',250.00,'2026-08-26',NULL,NULL),(7,1,1,'2026-12-12','2026-12-17','pendiente',125000.00,'2026-08-26',NULL,NULL),(8,1,1,'2026-12-14','2026-12-18','pendiente',100000.00,'2026-08-26',NULL,NULL),(9,1,1,'2026-12-14','2026-12-18','pendiente',100000.00,'2026-08-26',NULL,NULL);
+INSERT INTO `reserva` VALUES (4,1,1,'2026-11-11','2026-11-16','pendiente',125000.00,'2026-08-22',NULL,NULL,NULL,0.00,0),(5,1,1,'2026-12-01','2026-12-05','pendiente',100000.00,'2026-08-23',NULL,NULL,NULL,0.00,0),(6,1,2,'2026-12-10','2026-12-15','pendiente',250.00,'2026-08-26',NULL,NULL,NULL,0.00,0),(7,1,1,'2026-12-12','2026-12-17','pendiente',125000.00,'2026-08-26',NULL,NULL,NULL,0.00,0),(8,1,1,'2026-12-14','2026-12-18','pendiente',100000.00,'2026-08-26',NULL,NULL,NULL,0.00,0),(9,1,1,'2026-12-14','2026-12-18','pendiente',100000.00,'2026-08-26',NULL,NULL,NULL,0.00,0),(10,7,1,'2026-09-09','2026-09-10','pendiente',25000.00,'2026-09-09',NULL,NULL,NULL,0.00,0),(11,7,5,'2026-09-11','2026-07-10','pendiente',70.00,'2026-09-10',NULL,NULL,'2026-09-11 20:55:32',0.00,0);
 /*!40000 ALTER TABLE `reserva` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -303,6 +345,7 @@ DROP TABLE IF EXISTS `usuario`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `usuario` (
   `ID_usuario` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) DEFAULT NULL,
   `contrasena` varchar(100) NOT NULL,
   `dni` varchar(20) DEFAULT NULL,
   `mail` varchar(100) DEFAULT NULL,
@@ -322,7 +365,7 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
-INSERT INTO `usuario` VALUES (1,'$2a$12$kAwExYfPbRyJ8H4eCk2gNeO51dWm9V1QPV0vmediEzuuG5/RzzkBu','46920939','pepito123@gmail.com','2914146715',1,1,0,NULL),(2,'$2a$12$DEArvVrsMiYHN81M.GJJ6.cZ2d.gxWQ4lKmv9WvVmeeFh5yhQilre','46939969','vendedor@alquinow.com','2914126513',1,1,0,NULL),(7,'$2a$12$iO4yT1.mlUa3DR3A/HDwmOs2PP5jTGlxD55nF0uTDEosrqkEmErH.','46939920','demiancastro697@gmail.com','+5492914136815',1,1,1,NULL),(8,'$2a$12$9.4u07xnvw50BIeEbEdpPOSByQgXPvQMDCTEnHjDpkVTGaI4vyuuO','46939920','salasprueba1@gmail.com','+5492914136815',1,1,1,NULL);
+INSERT INTO `usuario` VALUES (1,NULL,'$2a$12$kAwExYfPbRyJ8H4eCk2gNeO51dWm9V1QPV0vmediEzuuG5/RzzkBu','46920939','pepito123@gmail.com','2914146715',1,1,0,NULL),(2,NULL,'$2a$12$DEArvVrsMiYHN81M.GJJ6.cZ2d.gxWQ4lKmv9WvVmeeFh5yhQilre','46939969','vendedor@alquinow.com','2914126513',1,1,0,NULL),(7,'Demian','$2a$12$iO4yT1.mlUa3DR3A/HDwmOs2PP5jTGlxD55nF0uTDEosrqkEmErH.','46939920','demiancastro697@gmail.com','+5492914136815',1,1,1,NULL),(8,NULL,'$2a$12$9.4u07xnvw50BIeEbEdpPOSByQgXPvQMDCTEnHjDpkVTGaI4vyuuO','46939920','salasprueba1@gmail.com','+5492914136815',1,1,1,NULL);
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -362,4 +405,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-09-08 21:04:05
+-- Dump completed on 2026-09-25 20:54:29

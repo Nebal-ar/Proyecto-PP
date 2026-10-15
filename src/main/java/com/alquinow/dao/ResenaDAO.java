@@ -6,13 +6,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ResenaDAO {
 
-  public boolean insertar(Resena resena) {
-        // Los nombres de las columnas ahora coinciden exactamente con tu tabla MySQL
+    public boolean insertar(Resena resena) {
         String sql = "INSERT INTO resena (ID_propiedad_fk, ID_comprador_fk, id_reserva_fk, puntuacion, comentario) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = Conexion.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -20,7 +20,7 @@ public class ResenaDAO {
             ps.setInt(1, resena.getIdPropiedad());
             ps.setInt(2, resena.getIdUsuario());
             ps.setInt(3, resena.getIdReservaFk()); 
-            ps.setInt(4, resena.getCalificacion()); // Esto está bien si tu objeto Java usa getCalificacion()
+            ps.setInt(4, resena.getCalificacion());
             ps.setString(5, resena.getComentario());
 
             return ps.executeUpdate() > 0;
@@ -33,32 +33,38 @@ public class ResenaDAO {
     public List<Resena> obtenerPorPropiedad(int idPropiedad) {
         List<Resena> resenas = new ArrayList<>();
         
+        // Unimos directamente resena con usuario usando los nombres exactos de tu BD
         String sql = "SELECT r.*, u.mail "
                    + "FROM resena r "
-                   + "JOIN Usuario u ON r.id_usuario = u.ID_usuario "
-                   + "WHERE r.id_propiedad = ? "
-                   + "ORDER BY r.fecha DESC";
+                   + "LEFT JOIN usuario u ON r.ID_comprador_fk = u.ID_usuario "
+                   + "WHERE r.ID_propiedad_fk = ? "
+                   + "ORDER BY r.ID_resena DESC";
                    
         try (Connection con = Conexion.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, idPropiedad);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) { // ACÁ ESTABA TU MAPEO
+                while (rs.next()) {
                     Resena r = new Resena();
-                    r.setId(rs.getInt("id"));
-                    r.setIdPropiedad(rs.getInt("id_propiedad"));
-                    r.setIdUsuario(rs.getInt("id_usuario"));
-                    
-                    r.setIdReservaFk(rs.getInt("id_reserva_fk")); // <-- 3. Leemos el ID de la base de datos
-                    
-                    r.setCalificacion(rs.getInt("calificacion"));
+                    r.setId(rs.getInt("ID_resena"));
+                    r.setIdPropiedad(rs.getInt("ID_propiedad_fk"));
+                    r.setIdUsuario(rs.getInt("ID_comprador_fk"));
+                    r.setIdReservaFk(rs.getInt("id_reserva_fk"));
+                    r.setCalificacion(rs.getInt("puntuacion"));
                     r.setComentario(rs.getString("comentario"));
-                    r.setFecha(rs.getTimestamp("fecha"));
+                    
+                    try {
+                        Timestamp ts = rs.getTimestamp("fecha");
+                        r.setFecha(ts != null ? ts : new Timestamp(System.currentTimeMillis()));
+                    } catch (SQLException ex) {
+                        r.setFecha(new Timestamp(System.currentTimeMillis()));
+                    }
                     
                     String mail = rs.getString("mail");
-                    String nombreMostrado = mail != null ? mail.split("@")[0] : "Usuario";
+                    String nombreMostrado = (mail != null && mail.contains("@")) ? mail.split("@")[0] : "Huésped verificado";
                     r.setNombreUsuario(nombreMostrado);
+                    
                     resenas.add(r);
                 }
             }
@@ -68,7 +74,7 @@ public class ResenaDAO {
         return resenas;
     }
     
-    // 4. NUEVO MÉTODO: Chequea si el usuario ya reseñó esta estadía
+    // Chequea si ya se reseñó esa estadía específica
     public boolean existeResenaParaReserva(int idReserva) {
         String sql = "SELECT 1 FROM resena WHERE id_reserva_fk = ?";
         try (Connection con = Conexion.getConexion();
@@ -76,7 +82,24 @@ public class ResenaDAO {
              
             ps.setInt(1, idReserva);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next(); // Devuelve true si la reseña ya existe
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Chequea si el mismo usuario ya reseñó esta propiedad antes
+    public boolean existeResenaDeUsuarioEnPropiedad(int idUsuario, int idPropiedad) {
+        String sql = "SELECT 1 FROM resena WHERE ID_comprador_fk = ? AND ID_propiedad_fk = ?";
+        try (Connection con = Conexion.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+             
+            ps.setInt(1, idUsuario);
+            ps.setInt(2, idPropiedad);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
         } catch (SQLException e) {
             e.printStackTrace();

@@ -87,9 +87,9 @@ public class ResenaServlet extends HttpServlet {
                 return;
             }
 
-            // 1. Barrera Anti-Spam: ¿Ya hay una reseña para esta reserva?
-            if (resenaDAO.existeResenaParaReserva(idReserva)) {
-                out.print("{\"error\":\"Ya publicaste una reseña para esta estadía.\"}");
+           // 1. Barrera Anti-Spam: ¿Ya hay una reseña para esta reserva o de este usuario en esta propiedad?
+            if (resenaDAO.existeResenaParaReserva(idReserva) || resenaDAO.existeResenaDeUsuarioEnPropiedad(usuario.getIdUsuario(), idPropiedad)) {
+                out.print("{\"error\":\"Ya publicaste una reseña para esta propiedad anteriormente.\"}");
                 return;
             }
 

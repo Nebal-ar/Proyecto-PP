@@ -40,28 +40,10 @@
             <div class="form-box" style="margin-top:2rem; max-width:none;">
                 <h2>Reseñas de la propiedad</h2>
 
-                <div id="lista-resenas" style="margin-top: 1rem; margin-bottom: 2rem;">
+                <div id="lista-resenas" style="margin-top: 1rem;">
                     <p>Cargando reseñas...</p>
                 </div>
-
-                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Dejá tu reseña</h3>
-                <div id="msg-resena"></div>
-
-                <label for="calificacion">Calificación</label>
-                <select id="calificacion" style="margin-bottom: 1rem; padding: 0.5rem; width: 100%;">
-                    <option value="5">5 - Excelente</option>
-                    <option value="4">4 - Muy buena</option>
-                    <option value="3">3 - Buena</option>
-                    <option value="2">2 - Regular</option>
-                    <option value="1">1 - Mala</option>
-                </select>
-
-                <label for="comentario">Comentario</label>
-                <textarea id="comentario" rows="3" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px;" placeholder="¿Cómo fue tu estadía?"></textarea>
-
-                <button class="btn" onclick="enviarResena()">Publicar reseña</button>
             </div>
-        </main>
 
         <script>
             const idPropiedad = new URLSearchParams(location.search).get("id");
@@ -255,53 +237,7 @@
                         .catch(e => console.error("Error al cargar reseñas", e));
             }
 
-            // 7. Enviar reseña
-            function enviarResena() {
-                const calificacion = document.getElementById("calificacion").value;
-                const comentario = document.getElementById("comentario").value;
-                const msgResena = document.getElementById("msg-resena");
-
-                if (!calificacion || !comentario) {
-                    msgResena.innerHTML = '<div class="alerta alerta-error">Completá la calificación y el comentario.</div>';
-                    return;
-                }
-
-                const body = new URLSearchParams();
-                body.append("idPropiedad", idPropiedad);
-                body.append("calificacion", calificacion);
-                body.append("comentario", comentario);
-
-                fetch("resenas", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                    body: body.toString()
-                })
-                        .then(r => {
-                            if (r.status === 401)
-                                throw new Error("No autenticado");
-                            return r.json();
-                        })
-                        .then(res => {
-                            if (res.ok) {
-                                msgResena.innerHTML = `<div class="alerta alerta-ok">${res.mensaje}</div>`;
-                                document.getElementById("comentario").value = "";
-                                document.getElementById("calificacion").value = "5";
-                                cargarResenas();
-                            } else {
-                                msgResena.innerHTML = `<div class="alerta alerta-error">${res.error}</div>`;
-                            }
-                        })
-                        .catch((e) => {
-                            if (e.message === "No autenticado") {
-                                msgResena.innerHTML = '<div class="alerta alerta-error">Tenés que <a href="login.html">iniciar sesión</a> para dejar una reseña.</div>';
-                            } else {
-                                msgResena.innerHTML = '<div class="alerta alerta-error">Ocurrió un error al enviar la reseña.</div>';
-                            }
-                        });
-            }
-
             cargarResenas();
-
         </script>
         <script src="js/session.js"></script>
     </body>

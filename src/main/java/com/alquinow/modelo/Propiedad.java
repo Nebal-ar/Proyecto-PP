@@ -33,9 +33,10 @@ public class Propiedad {
     private String fotoVerificacion;
     private String motivoRechazo;
 
-    // Configuraciones para la seña
+    // Configuraciones para la seña y cobro
     private int porcentajeSena;
     private int horasLimitePago;
+    private String aliasCbu;
 
     public Propiedad() {
     }
@@ -90,6 +91,9 @@ public class Propiedad {
 
     public int getHorasLimitePago() { return horasLimitePago; }
     public void setHorasLimitePago(int horasLimitePago) { this.horasLimitePago = horasLimitePago; }
+
+    public String getAliasCbu() { return aliasCbu; }
+    public void setAliasCbu(String aliasCbu) { this.aliasCbu = aliasCbu; }
 
     public Double getPromedioEstrellas() { return promedioEstrellas; }
     public void setPromedioEstrellas(Double promedioEstrellas) { this.promedioEstrellas = promedioEstrellas; }

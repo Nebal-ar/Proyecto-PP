@@ -6,7 +6,6 @@
   <title>Panel del anfitrión — AlquiNow</title>
   <link rel="stylesheet" href="css/estilos.css">
   
-  <!-- Librería Tom Select -->
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 </head>
@@ -19,13 +18,22 @@
   </header>
 
   <main class="contenedor" style="max-width:720px;">
+    
+    <!-- NUEVA SECCIÓN: VERIFICACIÓN DE PAGOS -->
+    <section id="seccion-pagos" style="margin-top: 1rem; margin-bottom: 3rem; display: none;">
+      <h2 style="margin-bottom: 1rem; color: #17a2b8;">Pagos por confirmar (Huéspedes)</h2>
+      <p style="color: var(--gris); margin-bottom: 1.5rem;">Revisá los comprobantes subidos por tus huéspedes y aprobá la seña para confirmar sus reservas.</p>
+      <div id="pagos-pendientes" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Las tarjetas de pagos pendientes se inyectan acá -->
+      </div>
+    </section>
+
     <h1 style="margin-bottom:.3rem;">Publicar una propiedad</h1>
     <p style="color:var(--gris);">Completá los datos y publicala al instante.</p>
     <div id="msg"></div>
 
     <form id="formPublicar" class="form-box" style="max-width:none; margin-top:1rem;" onsubmit="event.preventDefault(); publicar();">
       
-      <!-- SECCIÓN SEGURIDAD -->
       <h3 style="margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Seguridad y Verificación</h3>
       <p style="font-size: 0.85rem; color: var(--gris); margin-bottom: 1rem;">
         Para evitar fraudes, todas las propiedades deben ser verificadas por un administrador antes de aparecer en el catálogo.
@@ -45,16 +53,13 @@
       <label>Altura</label>
       <input type="number" id="altura" name="altura" min="1" step="1" placeholder="Ej: 542" required>
       
-      <!-- Input oculto de piso -->
       <input type="hidden" id="piso" name="piso" value="">
 
-      <!-- Casilla de edificio -->
       <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom: 0.5rem; cursor: pointer;">
           <input type="checkbox" id="es_edificio" onchange="actualizarPiso()" style="width:auto;">
           La propiedad es un departamento / edificio
       </label>
 
-      <!-- Contenedor desplegable -->
       <div id="caja_departamento" style="display:none; padding: 15px; background-color: #f1f1f1; border-radius: 5px; margin-bottom: 1rem;">
           <label style="margin-top: 0;">Piso</label>
           <input type="text" id="piso_input" onkeyup="actualizarPiso()" placeholder="Ej: 3 o PB" style="margin-bottom: 10px;">
@@ -100,16 +105,19 @@
       <label style="margin-top: 1rem;">Precio por noche ($)</label>
       <input type="number" id="precio_por_noche" name="precio_por_noche" min="1" step="1" placeholder="Ej: 70000" required>
 
-      <!-- Configuraciones financieras -->
       <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 1rem; border: 1px solid #ffeeba;">
-          <h4 style="margin-top: 0; margin-bottom: 10px; color: #856404;">Políticas de Alquiler</h4>
+          <h4 style="margin-top: 0; margin-bottom: 10px; color: #856404;">Políticas de Alquiler y Cobro</h4>
           
           <label style="color: #856404;">Porcentaje de seña a cobrar (%)</label>
           <input type="number" id="porcentaje_sena" name="porcentaje_sena" min="0" max="100" value="30" placeholder="Ej: 30" required style="margin-bottom: 10px;">
           
           <label style="color: #856404;">Días límite para cancelación gratuita</label>
           <input type="number" id="dias_cancelacion_sin_penalizacion" name="dias_cancelacion_sin_penalizacion" min="0" step="1" value="5" placeholder="Ej: 5" required>
-          <small style="color: #856404; display: block; margin-top: 5px;">Anticipación mínima para devolver la seña si el huésped cancela.</small>
+          <small style="color: #856404; display: block; margin-top: 5px; margin-bottom: 12px;">Anticipación mínima para devolver la seña si el huésped cancela.</small>
+
+          <label style="color: #856404;">Alias o CBU para recibir transferencias</label>
+          <input type="text" id="alias_cbu" name="alias_cbu" placeholder="Ej: mi.alias.mp o CBU de 22 dígitos" required>
+          <small style="color: #856404; display: block; margin-top: 5px;">Se mostrará al huésped cuando elija pagar por transferencia bancaria.</small>
       </div>
 
       <label>Capacidad (personas)</label>
@@ -121,7 +129,6 @@
       <label>Descripción <span style="color: #888; font-weight: normal; font-size: 0.85rem;">(Opcional)</span></label>
       <textarea id="descripcion" name="descripcion" rows="3"></textarea>
 
-      <!-- Galería de fotos -->
       <h3 style="margin-bottom: 1rem; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Galería de Fotos</h3>
       <label style="color: #444; font-weight: bold;">Seleccioná las fotos para mostrar a los huéspedes</label>
       <p style="font-size: 0.85rem; color: var(--gris); margin-bottom: 0.5rem; margin-top: 0;">Mantené presionada la tecla Ctrl (o arrastrá el mouse) para seleccionar varias imágenes a la vez.</p>
@@ -152,6 +159,9 @@
               
               <label style="font-weight: bold;">Porcentaje de seña (%)</label>
               <input type="number" id="edit_sena" name="sena" min="0" max="100" required style="width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px;">
+
+              <label style="font-weight: bold;">Alias o CBU de cobro</label>
+              <input type="text" id="edit_alias" name="alias_cbu" required style="width: 100%; padding: 10px; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px;">
               
               <label style="font-weight: bold;">Descripción</label>
               <textarea id="edit_descripcion" name="descripcion" rows="4" style="width: 100%; padding: 10px; margin-bottom: 1.5rem; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
@@ -170,8 +180,8 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       cargarMisPropiedades();
+      cargarReservasHuespedes(); // NUEVO: Cargamos los pagos pendientes
 
-      // Inicializamos Tom Select para Ciudad (arranca bloqueado hasta elegir provincia)
       selectVendedorCiudad = new TomSelect("#ciudad", {
           create: false,
           sortField: { field: "text", direction: "asc" },
@@ -179,7 +189,6 @@
       });
       selectVendedorCiudad.disable();
 
-      // Inicializamos Tom Select en el desplegable de Provincia y conectamos la API Georef
       selectVendedorProvincia = new TomSelect("#provincia", {
           create: false,
           sortField: { field: "text", direction: "asc" },
@@ -222,6 +231,83 @@
       });
     });
 
+    // --- NUEVO: Cargar pagos por revisar ---
+    function cargarReservasHuespedes() {
+        fetch('reservas?vista=vendedor')
+        .then(r => r.json())
+        .then(reservas => {
+            const contenedorPagos = document.getElementById("pagos-pendientes");
+            const seccionPagos = document.getElementById("seccion-pagos");
+            
+            // Filtramos solo las que dicen verificando_pago
+            const porRevisar = reservas.filter(r => r.estado === 'verificando_pago');
+            
+            if (porRevisar.length === 0) {
+                seccionPagos.style.display = "none";
+                return;
+            }
+
+            seccionPagos.style.display = "block";
+            contenedorPagos.innerHTML = "";
+
+            porRevisar.forEach(reserva => {
+                const tarjeta = document.createElement('div');
+                tarjeta.style.border = "1px solid #17a2b8";
+                tarjeta.style.borderLeft = "5px solid #17a2b8";
+                tarjeta.style.padding = "1.2rem";
+                tarjeta.style.borderRadius = "6px";
+                tarjeta.style.backgroundColor = "#f8f9fa";
+                
+                const senaCalculada = (reserva.montoTotal * 0.30).toFixed(0); 
+
+                tarjeta.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h4 style="margin: 0 0 5px 0; color: #333;">Comprobante recibido de: <span style="font-weight:normal;">${reserva.correoComprador || 'Huésped'}</span></h4>
+                            <p style="margin: 0 0 5px 0; font-size: 0.9rem;"><strong>Propiedad:</strong> ${reserva.calle} ${reserva.altura}</p>
+                            <p style="margin: 0; font-size: 0.9rem;"><strong>Monto esperado:</strong> $${senaCalculada} (${reserva.metodoPago})</p>
+                        </div>
+                        <a href="uploads/${reserva.comprobantePago}" target="_blank" style="background-color: #007bff; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem;">
+                            👁 Ver Comprobante
+                        </a>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end;">
+                        <button onclick="resolverPago(${reserva.id || reserva.idReserva}, 'rechazar_pago')" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">Rechazar</button>
+                        <button onclick="resolverPago(${reserva.id || reserva.idReserva}, 'aprobar_pago')" style="background-color: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✅ Aprobar y Confirmar</button>
+                    </div>
+                `;
+                contenedorPagos.appendChild(tarjeta);
+            });
+        })
+        .catch(err => console.error("Error al cargar pagos:", err));
+    }
+
+    // --- NUEVO: Aprobar o rechazar el comprobante ---
+    function resolverPago(idReserva, accion) {
+        let msj = accion === 'aprobar_pago' ? '¿Confirmar que recibiste el pago y aprobar la reserva?' : '¿Rechazar el comprobante? El huésped deberá subir uno nuevo.';
+        if (!confirm(msj)) return;
+
+        const params = new URLSearchParams();
+        params.append("accion", accion);
+        params.append("id", idReserva);
+
+        fetch("reservas", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString()
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.ok) {
+                alert("Estado de pago actualizado.");
+                cargarReservasHuespedes(); 
+            } else {
+                alert("No se pudo actualizar el pago.");
+            }
+        })
+        .catch(err => console.error("Error al resolver pago:", err));
+    }
+
     function actualizarPiso() {
         const checkbox = document.getElementById('es_edificio');
         const caja = document.getElementById('caja_departamento');
@@ -261,7 +347,6 @@
         if (res.ok) {
           msg.innerHTML = '<div class="alerta alerta-ok">¡Propiedad enviada! Un administrador la revisará a la brevedad.</div>';
           formElement.reset(); 
-          // Reiniciamos también los buscadores de provincia y ciudad
           selectVendedorProvincia.clear();
           selectVendedorCiudad.clear();
           selectVendedorCiudad.clearOptions();
@@ -334,8 +419,9 @@
                     tarjeta.style.opacity = "0.85";
                 }
 
-                // Codificamos la descripción para que los saltos de línea no rompan el botón de Editar
                 const descCodificada = encodeURIComponent(prop.descripcion || '');
+                const aliasActual = prop.aliasCbu || 'alquinow.propietario.mp';
+                const aliasCodificado = encodeURIComponent(aliasActual);
                 const sena = prop.porcentajeSena || 30;
 
                 tarjeta.innerHTML = `
@@ -348,13 +434,14 @@
                   ${alertaRechazo}
                   
                   <p style="margin-bottom: 0.5rem;">${prop.descripcion}</p>
-                  <p style="font-size: 0.9rem; margin-bottom: 1rem;"><strong>Capacidad:</strong> ${prop.cantPersonas} personas</p>
+                  <p style="font-size: 0.9rem; margin-bottom: 0.3rem;"><strong>Capacidad:</strong> ${prop.cantPersonas} personas</p>
+                  <p style="font-size: 0.85rem; color: #555; margin-bottom: 1rem;"><strong>Alias/CBU:</strong> ${aliasActual} | <strong>Seña:</strong> ${sena}%</p>
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <p style="color: var(--brasa); font-weight: bold; font-size: 1.2rem; margin: 0;">
                       $${prop.precioPorNoche} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">/ noche</span>
                     </p>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button onclick="abrirModalEdicion(${prop.idPropiedad || prop.id}, ${prop.precioPorNoche}, ${sena}, '${descCodificada}')" class="btn" style="background-color: #007bff; padding: 0.5rem 1rem;">Editar</button>
+                        <button onclick="abrirModalEdicion(${prop.idPropiedad || prop.id}, ${prop.precioPorNoche}, ${sena}, '${descCodificada}', '${aliasCodificado}')" class="btn" style="background-color: #007bff; padding: 0.5rem 1rem;">Editar</button>
                         <button onclick="eliminarPropiedad(${prop.idPropiedad || prop.id})" class="btn" style="background-color: #dc3545; padding: 0.5rem 1rem;">Eliminar</button>
                     </div>
                   </div>
@@ -369,11 +456,11 @@
         });
     }
 
-    // --- FUNCIONES DE EDICIÓN RÁPIDA ---
-    function abrirModalEdicion(id, precio, sena, descCodificada) {
+    function abrirModalEdicion(id, precio, sena, descCodificada, aliasCodificado) {
         document.getElementById('edit_id').value = id;
         document.getElementById('edit_precio').value = precio;
         document.getElementById('edit_sena').value = sena;
+        document.getElementById('edit_alias').value = decodeURIComponent(aliasCodificado || 'alquinow.propietario.mp');
         document.getElementById('edit_descripcion').value = decodeURIComponent(descCodificada);
         
         document.getElementById('modalEdicion').style.display = 'flex';
@@ -389,6 +476,7 @@
         params.append("id", document.getElementById('edit_id').value);
         params.append("precio", document.getElementById('edit_precio').value);
         params.append("sena", document.getElementById('edit_sena').value);
+        params.append("alias_cbu", document.getElementById('edit_alias').value.trim());
         params.append("descripcion", document.getElementById('edit_descripcion').value);
 
         fetch("propiedades", {

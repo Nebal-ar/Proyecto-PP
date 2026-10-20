@@ -20,14 +20,13 @@ public class PropiedadDAO {
 
     /** Inserta una propiedad nueva y devuelve su ID generado. */
     public int crear(Propiedad p) throws SQLException {
-        // CORRECCIÓN: Se eliminó "disponibilidad_inmediata" y se agregó "porcentaje_sena"
         String sql =
             "INSERT INTO Propiedad "
             + "(ID_vendedor_fk, estadia_minima, calle, altura, codigo_postal, "
             + " ciudad, provincia, pais, precio_por_noche, metros_cuadrados, "
             + " cant_personas, piso, descripcion, dias_cancelacion_sin_penalizacion, "
-            + " estado_verificacion, comprobante_titularidad, foto_verificacion, porcentaje_sena) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)";
+            + " estado_verificacion, comprobante_titularidad, foto_verificacion, porcentaje_sena, alias_cbu) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?, ?)";
 
         try (Connection con = Conexion.getConexion();
              PreparedStatement ps = con.prepareStatement(
@@ -50,9 +49,8 @@ public class PropiedadDAO {
             
             ps.setString(15, p.getComprobanteTitularidad());
             ps.setString(16, p.getFotoVerificacion());
-            
-            // Se inserta el nuevo porcentaje (parámetro número 17)
             ps.setInt(17, p.getPorcentajeSena());
+            ps.setString(18, (p.getAliasCbu() == null || p.getAliasCbu().isBlank()) ? "alquinow.propietario.mp" : p.getAliasCbu());
 
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -93,7 +91,7 @@ public class PropiedadDAO {
                                   Integer precioMax, Integer personasMin) throws SQLException {
         
         String sqlBase = "SELECT p.*, " +
-                         "(SELECT ROUND(AVG(calificacion), 1) FROM resena r WHERE r.id_propiedad_fk = p.ID_propiedad) AS promedio " +
+                         "(SELECT ROUND(AVG(puntuacion), 1) FROM resena r WHERE r.id_propiedad_fk = p.ID_propiedad) AS promedio " +
                          "FROM Propiedad p WHERE p.estado_verificacion = 'aprobada'";
                          
         StringBuilder sql = new StringBuilder(sqlBase);
@@ -124,12 +122,11 @@ public class PropiedadDAO {
 
     /** Actualiza una propiedad existente. */
     public boolean actualizar(Propiedad p) throws SQLException {
-        // CORRECCIÓN: Se agrega porcentaje_sena a la actualización
         String sql =
             "UPDATE Propiedad SET estadia_minima=?, calle=?, altura=?, "
             + "codigo_postal=?, ciudad=?, provincia=?, pais=?, precio_por_noche=?, "
             + "metros_cuadrados=?, cant_personas=?, piso=?, descripcion=?, "
-            + "dias_cancelacion_sin_penalizacion=?, porcentaje_sena=? "
+            + "dias_cancelacion_sin_penalizacion=?, porcentaje_sena=?, alias_cbu=? "
             + "WHERE ID_propiedad=?";
 
         try (Connection con = Conexion.getConexion();
@@ -148,10 +145,9 @@ public class PropiedadDAO {
             ps.setString(11, p.getPiso());
             ps.setString(12, p.getDescripcion());
             setIntOrNull(ps, 13, p.getDiasCancelacionSinPenalizacion());
-            
-            // Nuevo campo en la actualización
             ps.setInt(14, p.getPorcentajeSena());
-            ps.setInt(15, p.getIdPropiedad());
+            ps.setString(15, p.getAliasCbu());
+            ps.setInt(16, p.getIdPropiedad());
 
             return ps.executeUpdate() > 0;
         }
@@ -227,8 +223,13 @@ public class PropiedadDAO {
         p.setFotoVerificacion(rs.getString("foto_verificacion"));
         p.setMotivoRechazo(rs.getString("motivo_rechazo"));
         
-        // NUEVO: Mapeamos la seña desde la base de datos
+        // Mapeamos la seña y el Alias/CBU desde la base de datos
         p.setPorcentajeSena(rs.getInt("porcentaje_sena"));
+        try {
+            p.setAliasCbu(rs.getString("alias_cbu"));
+        } catch (SQLException e) {
+            p.setAliasCbu("alquinow.propietario.mp");
+        }
         
         return p;
     }
@@ -288,7 +289,7 @@ public class PropiedadDAO {
         return lista;
     }
     
-    // Método para la "Edición Rápida" (Solo campos que no requieren re-verificación)
+    // Método para la "Edición Rápida" (incluye opcionalmente actualizar el Alias/CBU)
     public boolean actualizarDatosSeguros(int idPropiedad, BigDecimal precio, String descripcion, int sena) throws SQLException {
         String sql = "UPDATE propiedad SET precio_por_noche = ?, descripcion = ?, porcentaje_sena = ? WHERE ID_propiedad = ?";
         try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -299,5 +300,16 @@ public class PropiedadDAO {
             return ps.executeUpdate() > 0;
         }
     }
-}
 
+    public boolean actualizarDatosSeguros(int idPropiedad, BigDecimal precio, String descripcion, int sena, String aliasCbu) throws SQLException {
+        String sql = "UPDATE propiedad SET precio_por_noche = ?, descripcion = ?, porcentaje_sena = ?, alias_cbu = ? WHERE ID_propiedad = ?";
+        try (Connection con = Conexion.getConexion(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setBigDecimal(1, precio);
+            ps.setString(2, descripcion);
+            ps.setInt(3, sena);
+            ps.setString(4, aliasCbu);
+            ps.setInt(5, idPropiedad);
+            return ps.executeUpdate() > 0;
+        }
+    }
+}

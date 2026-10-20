@@ -32,8 +32,24 @@
 
                 <!-- Contenedor dinámico para la calculadora de precios y seña -->
                 <div id="desglose-precio"></div>
+                
+                <!-- NUEVO: SELECCIÓN DE MÉTODO DE PAGO (Oculto hasta que elija fechas) -->
+                <div id="seccion-pago" style="display: none; margin-top: 1.5rem;">
+                    <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 10px; font-size: 1.1rem; color: #333;">¿Cómo preferís abonar la seña?</h3>
+                    
+                    <select id="metodoPago" onchange="mostrarDetallePago()" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;">
+                        <option value="" disabled selected>Seleccioná un método de pago...</option>
+                        <option value="Transferencia">Transferencia Bancaria / Mercadopago</option>
+                        <option value="Tarjeta">Tarjeta de Débito / Crédito</option>
+                        <option value="Efectivo">Efectivo (Pago Fácil / Rapipago)</option>
+                    </select>
+                    
+                    <!-- Casilleros dinámicos según el método elegido -->
+                    <div id="detalle-metodo-pago"></div>
+                </div>
 
-                <button class="btn btn-block" onclick="reservar()" style="margin-top: 1rem;">Confirmar reserva</button>
+                <button class="btn btn-block" onclick="reservar()" style="margin-top: 1.5rem;">Confirmar reserva</button>
             </div>
 
             <!-- Sección de Reseñas -->
@@ -48,10 +64,9 @@
         <script>
             const idPropiedad = new URLSearchParams(location.search).get("id");
             let fechasOcupadas = [];
-            let propiedadActual = null; // Guardamos la propiedad para calcular la plata
+            let propiedadActual = null; 
 
-            // 1. Cargamos el detalle de la propiedad (¡AHORA CON ANTI-CACHÉ!)
-            // Le agregamos la hora exacta para obligar a Chrome a buscar el dato nuevo
+            // 1. Cargamos el detalle de la propiedad
             fetch("propiedades?id=" + idPropiedad + "&nocache=" + new Date().getTime())
                     .then(r => r.json())
                     .then(p => {
@@ -60,7 +75,7 @@
                             return;
                         }
                         propiedadActual = p;
-                        console.log("✅ Propiedad traída de la BD:", p); // Podés apretar F12 para ver esto
+                        console.log("✅ Propiedad traída de la BD:", p); 
                         document.getElementById("detalle").innerHTML = `
           <div class="card"><div class="card-body">
             <div class="ubic">${p.ciudad}, ${p.provincia}</div>
@@ -89,9 +104,11 @@
                 const inputInicio = document.getElementById("fechaInicio").value;
                 const inputFinal = document.getElementById("fechaFinal").value;
                 const desglose = document.getElementById("desglose-precio");
+                const seccionPago = document.getElementById("seccion-pago");
 
                 if (!inputInicio || !inputFinal || !propiedadActual) {
                     desglose.innerHTML = "";
+                    seccionPago.style.display = "none";
                     return;
                 }
 
@@ -100,6 +117,7 @@
 
                 if (dInicio >= dFin) {
                     desglose.innerHTML = "";
+                    seccionPago.style.display = "none";
                     return;
                 }
 
@@ -108,10 +126,7 @@
                 const precioNoche = Number(p.precioPorNoche || p.precio_por_noche || 25000);
                 const total = noches * precioNoche;
 
-                // Calculamos la seña leyendo EXACTAMENTE lo que dice la base de datos
                 const porcentajeSena = (p.porcentajeSena !== undefined && p.porcentajeSena !== null) ? p.porcentajeSena : 30;
-                console.log("🧮 Porcentaje de seña aplicado:", porcentajeSena + "%");
-
                 const sena = total * (porcentajeSena / 100);
 
                 const diasPenalizacion = p.diasCancelacionSinPenalizacion || 5;
@@ -136,7 +151,7 @@
                     <span>$${total.toLocaleString('es-AR')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; color: var(--brasa); font-size: 1.1rem;">
-                    <span>Seña requerida ahora (${porcentajeSena}%)</span>
+                    <span>Seña requerida (${porcentajeSena}%)</span>
                     <span>$${sena.toLocaleString('es-AR')}</span>
                 </div>
                 <hr style="border: 0; border-top: 1px solid #ddd; margin: 10px 0;">
@@ -145,12 +160,55 @@
                 </p>
             </div>
         `;
+                // Al calcular un precio válido, mostramos la sección para elegir método de pago
+                seccionPago.style.display = "block";
+            }
+
+            // --- NUEVO: MOSTRAR OPCIONES DE PAGO SEGÚN LO QUE ELIJA ---
+            function mostrarDetallePago() {
+                const metodo = document.getElementById("metodoPago").value;
+                const contenedor = document.getElementById("detalle-metodo-pago");
+                const p = Array.isArray(propiedadActual) ? propiedadActual[0] : propiedadActual;
+                
+                contenedor.innerHTML = ""; // Limpiamos primero
+
+                if (metodo === "Transferencia") {
+                    const alias = p.aliasCbu || "alquinow.propietario.mp";
+                    contenedor.innerHTML = `
+                        <div style="background-color: #e2e3e5; padding: 15px; border-radius: 6px; border-left: 4px solid #6c757d;">
+                            <p style="margin: 0; color: #383d41; font-size: 0.9rem;">
+                                Al confirmar, deberás transferir la seña al Alias / CBU del propietario:<br>
+                                <strong style="font-size: 1.1rem; display: block; margin-top: 5px;">${alias}</strong>
+                            </p>
+                        </div>
+                    `;
+                } else if (metodo === "Tarjeta") {
+                    contenedor.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <input type="text" placeholder="Número de tarjeta (16 dígitos)" maxlength="16" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                            <input type="text" placeholder="Nombre completo del titular" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" placeholder="MM/AA" maxlength="5" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 50%;">
+                                <input type="password" placeholder="CVV" maxlength="3" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 50%;">
+                            </div>
+                        </div>
+                    `;
+                } else if (metodo === "Efectivo") {
+                    contenedor.innerHTML = `
+                        <div style="background-color: #d1ecf1; padding: 15px; border-radius: 6px; border-left: 4px solid #17a2b8;">
+                            <p style="margin: 0; color: #0c5460; font-size: 0.9rem;">
+                                Al confirmar la reserva se te generará un cupón. Acercate a cualquier sucursal de <strong>Pago Fácil</strong> o <strong>Rapipago</strong> para abonar la seña en efectivo dentro de las próximas 24 horas.
+                            </p>
+                        </div>
+                    `;
+                }
             }
 
             // 5. Función de reserva
             function reservar() {
                 const inputInicio = document.getElementById("fechaInicio").value;
                 const inputFinal = document.getElementById("fechaFinal").value;
+                const metodo = document.getElementById("metodoPago").value;
                 const msg = document.getElementById("msg");
 
                 if (!inputInicio || !inputFinal) {
@@ -159,6 +217,12 @@
                 }
                 if (inputInicio >= inputFinal) {
                     msg.innerHTML = '<div class="alerta alerta-error">La fecha de fin debe ser posterior al inicio.</div>';
+                    return;
+                }
+                
+                // Validamos que haya elegido cómo va a pagar
+                if (!metodo) {
+                    msg.innerHTML = '<div class="alerta alerta-error">Por favor, elegí un método de pago.</div>';
                     return;
                 }
 
@@ -184,6 +248,8 @@
                 body.append("idPropiedad", idPropiedad);
                 body.append("fechaInicio", inputInicio);
                 body.append("fechaFinal", inputFinal);
+                // Le mandamos al Java de la reserva el método que eligió
+                body.append("metodoPago", metodo);
 
                 fetch("reservas", {
                     method: "POST",
@@ -194,8 +260,9 @@
                         .then(res => {
                             if (res.ok) {
                                 msg.innerHTML = `<div class="alerta alerta-ok">
-                  ¡Reserva confirmada! Revisá tu panel de "Mis Reservas" para gestionar el pago de la seña.</div>`;
-                                document.getElementById("desglose-precio").innerHTML = ""; // Limpiamos la calculadora
+                  ¡Reserva confirmada con éxito! Pagando con <strong>${metodo}</strong>. Revisá tu panel de "Mis Reservas".</div>`;
+                                document.getElementById("desglose-precio").innerHTML = ""; 
+                                document.getElementById("seccion-pago").style.display = "none";
                             } else {
                                 msg.innerHTML = `<div class="alerta alerta-error">${res.error || 'No se pudo reservar.'}</div>`;
                             }

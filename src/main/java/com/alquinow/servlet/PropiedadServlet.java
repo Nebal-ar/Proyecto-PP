@@ -49,6 +49,9 @@ public class PropiedadServlet extends HttpServlet {
             String provincia = req.getParameter("provincia");
             Integer precioMax = parseEntero(req.getParameter("precioMax"));
             Integer personasMin = parseEntero(req.getParameter("personasMin"));
+            if (personasMin == null) {
+                personasMin = parseEntero(req.getParameter("personas"));
+            }
 
             List<Propiedad> lista;
             if (tieneAlgo(ciudad) || tieneAlgo(provincia) || precioMax != null || personasMin != null) {
@@ -92,14 +95,20 @@ public class PropiedadServlet extends HttpServlet {
                 return;
             }
             
-            // NUEVO: Atajar la acción de editar
+            // Atajar la acción de editar (incluyendo Alias/CBU si viene)
             if ("editar".equals(accion)) {
                 int id = Integer.parseInt(req.getParameter("id"));
                 BigDecimal precio = new BigDecimal(req.getParameter("precio"));
                 String desc = req.getParameter("descripcion");
                 int sena = Integer.parseInt(req.getParameter("sena"));
+                String alias = req.getParameter("alias_cbu");
                 
-                boolean ok = propiedadDAO.actualizarDatosSeguros(id, precio, desc, sena);
+                boolean ok;
+                if (alias != null && !alias.isBlank()) {
+                    ok = propiedadDAO.actualizarDatosSeguros(id, precio, desc, sena, alias.trim());
+                } else {
+                    ok = propiedadDAO.actualizarDatosSeguros(id, precio, desc, sena);
+                }
                 out.print("{\"ok\":" + ok + "}");
                 return;
             }
@@ -145,6 +154,9 @@ public class PropiedadServlet extends HttpServlet {
             
             Integer sena = parseEntero(req.getParameter("porcentaje_sena"));
             p.setPorcentajeSena(sena != null ? sena : 30);
+
+            String aliasCbu = req.getParameter("alias_cbu");
+            p.setAliasCbu((aliasCbu != null && !aliasCbu.isBlank()) ? aliasCbu.trim() : "alquinow.propietario.mp");
             
             String precio = req.getParameter("precio_por_noche");
             if (precio != null && !precio.isBlank()) {
@@ -175,7 +187,6 @@ public class PropiedadServlet extends HttpServlet {
                         String nFoto = System.currentTimeMillis() + "_gal_" + fName;
                         part.write(uploadPath + File.separator + nFoto);
                         
-                        // Guardamos en la base de datos (la primera es la principal)
                         propiedadDAO.agregarImagen(idPropiedad, nFoto, primeraFoto);
                         primeraFoto = false;
                     }
@@ -213,8 +224,8 @@ public class PropiedadServlet extends HttpServlet {
 
     private String propiedadAJson(Propiedad p) {
         String estadoV = p.getEstadoVerificacion() != null ? p.getEstadoVerificacion() : "pendiente";
+        String alias = (p.getAliasCbu() != null && !p.getAliasCbu().isBlank()) ? p.getAliasCbu() : "alquinow.propietario.mp";
         
-        // OBTENEMOS LAS IMÁGENES DE LA BASE DE DATOS
         StringBuilder fotosJson = new StringBuilder("[");
         try {
             List<String> fotos = propiedadDAO.obtenerImagenesPorPropiedad(p.getIdPropiedad());
@@ -244,7 +255,9 @@ public class PropiedadServlet extends HttpServlet {
             + "\"estadoVerificacion\":\"" + escapar(estadoV) + "\","
             + "\"motivoRechazo\":\"" + escapar(p.getMotivoRechazo()) + "\","
             + "\"porcentajeSena\":" + p.getPorcentajeSena() + ","
-            + "\"imagenes\":" + fotosJson.toString() // INCLUIMOS EL ARRAY DE IMÁGENES
+            + "\"diasCancelacionSinPenalizacion\":" + (p.getDiasCancelacionSinPenalizacion() != null ? p.getDiasCancelacionSinPenalizacion() : 5) + ","
+            + "\"aliasCbu\":\"" + escapar(alias) + "\","
+            + "\"imagenes\":" + fotosJson.toString()
             + "}";
     }
 

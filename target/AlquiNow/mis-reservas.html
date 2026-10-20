@@ -8,7 +8,6 @@
     </head>
     <body>
 
-        <!-- Cabecera con la barra de navegación vacía para que session.js haga su magia -->
         <header class="nav">
             <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
             <nav class="nav-links"></nav>
@@ -18,13 +17,11 @@
             <h1 style="margin-bottom:.3rem;">Mis Reservas</h1>
             <p style="color:var(--gris);">Historial de tus viajes y estadías confirmadas.</p>
 
-            <!-- Contenedor donde JavaScript va a inyectar las tarjetas -->
             <div id="contenedor-reservas" style="margin-top: 2rem; display: grid; gap: 1.5rem;">
                 <p>Cargando tus reservas...</p>
             </div>
         </main>
 
-        <!-- 1. Cargamos el detector de sesiones -->
         <script src="js/session.js"></script>
 
         <!-- CARTELES VISUALES -->
@@ -36,7 +33,6 @@
             <span id="textoError"></span>
         </div>
 
-        <!-- 2. Lógica específica de esta pantalla -->
         <script>
             document.addEventListener("DOMContentLoaded", () => {
                 cargarReservas();
@@ -64,15 +60,17 @@
                         tarjeta.style.borderRadius = "8px";
                         tarjeta.style.backgroundColor = "#fff";
                         
-                        // 1. Filtramos el estado para que se lea natural y le asignamos un color
                         let estadoLimpio = reserva.estado;
                         let colorBadge = "#777";
 
                         if (reserva.estado === 'pendiente_sena') {
                             estadoLimpio = 'Pendiente de seña';
                             colorBadge = "#f0ad4e";
-                        } else if (reserva.estado === 'confirmada') {
-                            estadoLimpio = 'Confirmada';
+                        } else if (reserva.estado === 'verificando_pago') {
+                            estadoLimpio = 'Verificando pago (Transferencia)';
+                            colorBadge = "#17a2b8";
+                        } else if (reserva.estado === 'sena_pagada') {
+                            estadoLimpio = 'Confirmada (Seña pagada)';
                             colorBadge = "#28a745";
                         } else if (reserva.estado === 'cancelada') {
                             estadoLimpio = 'Cancelada (Sin cargo)';
@@ -91,34 +89,32 @@
                             colorBadge = "#007bff";
                         }
 
-                        // 2. Acortamos la fecha
                         let limiteCorto = reserva.fechaLimitePago ? reserva.fechaLimitePago.substring(0, 16) : '';
                         
-                        // 3. Preparamos las alertas visuales y botones
                         let alertaSena = "";
                         let botonPagar = "";
+                        let infoMetodo = reserva.metodoPago ? ` | <strong>Método:</strong> ${reserva.metodoPago}` : "";
+
+                        // Si está pendiente y eligió Transferencia, mostramos botón para subir ticket
                         if (reserva.estado === 'pendiente_sena') {
                             alertaSena = `<p style="color: #d9534f; font-weight: bold; margin-bottom: 5px; margin-top: 15px;">
-                                            ⚠️ Límite para pagar la seña: ${limiteCorto}
+                                          ⚠️ Límite para pagar: ${limiteCorto}
                                           </p>`;
-                            botonPagar = `<button onclick="abrirModalPago(${reserva.id || reserva.idReserva})" style="background-color: #f0ad4e; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-weight: bold;">
-                                            Pagar Seña
-                                          </button>`;
+                                          
+                            if (reserva.metodoPago === 'Transferencia') {
+                                botonPagar = `<button onclick="abrirModalPago(${reserva.id || reserva.idReserva})" style="background-color: #f0ad4e; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-weight: bold;">
+                                                Subir comprobante
+                                              </button>`;
+                            }
                         }
 
-                        // NUEVO: Botón de Cancelar Reserva (solo si está activa)
                         let botonCancelar = "";
-                        if (reserva.estado === 'pendiente_sena' || reserva.estado === 'confirmada') {
+                        if (reserva.estado === 'pendiente_sena' || reserva.estado === 'sena_pagada' || reserva.estado === 'verificando_pago') {
                             botonCancelar = `<button onclick="ejecutarCancelacion(${reserva.id || reserva.idReserva})" style="background-color: #dc3545; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; margin-left: 10px; font-weight: bold;">
-                                                Cancelar Reserva
+                                              Cancelar Reserva
                                              </button>`;
                         }
 
-                        // 4. Armamos el HTML de la tarjeta
-                        let idProp = reserva.idPropiedadFk || reserva.idPropiedad || 0;
-                        let idRes = reserva.idReserva || reserva.id || 0;
-                        
-                        // LÓGICA DE LOS 60 DÍAS (FRONTEND)
                         let botonResena = "";
                         if (reserva.fechaFinal && reserva.estado === 'finalizada') {
                             const hoy = new Date();
@@ -127,7 +123,7 @@
                             const diferenciaDias = Math.floor((hoy - fechaFin) / milisegundosPorDia);
                             
                             if (diferenciaDias >= 0 && diferenciaDias <= 60) {
-                                botonResena = `<button onclick="abrirModalResena(${idRes}, ${idProp})" style="background-color: #4CAF50; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                botonResena = `<button onclick="abrirModalResena(${reserva.id || reserva.idReserva}, ${reserva.idPropiedad || reserva.idPropiedadFk})" style="background-color: #4CAF50; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
                                                 ⭐ Dejar Reseña
                                                </button>`;
                             }
@@ -148,7 +144,7 @@
                             
                             <p style="margin-bottom: 0.5rem;"><strong>Estado:</strong> <span style="background-color: ${colorBadge}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">${estadoLimpio}</span></p>
                             <p style="color: #e55e30; font-weight: bold; margin: 0;">
-                                Monto total: $${reserva.montoTotal}
+                                Monto total: $${reserva.montoTotal} <span style="color: #666; font-size: 0.85rem; font-weight: normal;">${infoMetodo}</span>
                             </p>
                             
                             ${alertaSena}
@@ -168,11 +164,8 @@
                 });
             }
 
-            // NUEVA FUNCIÓN: Envía la orden de cancelar al servidor
             function ejecutarCancelacion(idReserva) {
-                if (!confirm("¿Estás seguro de que querés cancelar esta reserva?\nSe aplicarán las políticas de reembolso correspondientes.")) {
-                    return;
-                }
+                if (!confirm("¿Estás seguro de que querés cancelar esta reserva?\nSe aplicarán las políticas de reembolso correspondientes.")) return;
 
                 const datos = new URLSearchParams();
                 datos.append("accion", "cancelar");
@@ -183,26 +176,62 @@
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: datos.toString()
                 })
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     if (data.ok) {
-                        const cartel = document.getElementById("cartelExito");
-                        cartel.innerHTML = "✅ Reserva cancelada";
-                        cartel.style.display = "block"; 
-                        setTimeout(() => {
-                            cartel.style.display = "none";
-                            cargarReservas(); // Recarga la lista sin refrescar toda la página
-                        }, 2500);
+                        mostrarExito("✅ Reserva cancelada");
+                        cargarReservas(); 
                     } else {
                         mostrarError(data.error || "No se pudo cancelar la reserva.");
                     }
                 })
-                .catch(error => {
-                    console.error("Error:", error);
-                    mostrarError("Ocurrió un problema de conexión.");
+                .catch(error => mostrarError("Ocurrió un problema de conexión."));
+            }
+
+            // --- NUEVAS FUNCIONES PARA SUBIR EL TICKET ---
+            function abrirModalPago(idReserva) {
+                document.getElementById("pago-id-reserva").value = idReserva;
+                document.getElementById("modal-pago").style.display = "flex";
+            }
+
+            function cerrarModalPago() {
+                document.getElementById("modal-pago").style.display = "none";
+                document.getElementById("form-pago").reset(); 
+            }
+
+            function enviarComprobante(evento) {
+                evento.preventDefault(); 
+                
+                const formulario = document.getElementById("form-pago");
+                const datos = new FormData(formulario);
+                datos.append("accion", "subir_comprobante");
+
+                // Ponemos cartelito de espera por si la foto pesa mucho
+                document.getElementById("btn-subir-pago").innerText = "Enviando...";
+                document.getElementById("btn-subir-pago").disabled = true;
+
+                fetch('reservas', {
+                    method: 'POST',
+                    body: datos // NO le ponemos headers porque FormData los arma automáticamente para archivos
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        mostrarExito("✅ Comprobante enviado para revisión.");
+                        cerrarModalPago();
+                        cargarReservas(); 
+                    } else {
+                        mostrarError(data.error || "No se pudo enviar el comprobante.");
+                    }
+                })
+                .catch(error => mostrarError("Ocurrió un problema al subir la imagen."))
+                .finally(() => {
+                    document.getElementById("btn-subir-pago").innerText = "Enviar comprobante";
+                    document.getElementById("btn-subir-pago").disabled = false;
                 });
             }
-            
+
+            // --- FUNCIONES DE RESEÑAS ---
             function abrirModalResena(idReserva, idPropiedad) {
                 document.getElementById("resena-id-reserva").value = idReserva;
                 document.getElementById("resena-id-propiedad").value = idPropiedad;
@@ -212,13 +241,6 @@
             function cerrarModalResena() {
                 document.getElementById("modal-resena").style.display = "none";
                 document.getElementById("form-resena").reset(); 
-            }
-
-            function mostrarError(mensaje) {
-                const cartelError = document.getElementById("cartelError");
-                document.getElementById("textoError").innerText = "❌ " + mensaje;
-                cartelError.style.display = "block";
-                setTimeout(() => cartelError.style.display = "none", 4000);
             }
 
             function enviarResena(evento) {
@@ -231,16 +253,10 @@
                     method: 'POST',
                     body: datos
                 })
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     if (data.ok) {
-                        const cartel = document.getElementById("cartelExito");
-                        cartel.innerHTML = "✅ ¡Reseña publicada con éxito!";
-                        cartel.style.display = "block"; 
-                        setTimeout(() => {
-                            cartel.style.display = "none";
-                            location.reload(); 
-                        }, 3000);
+                        mostrarExito("✅ ¡Reseña publicada con éxito!");
                         cerrarModalResena();
                     } else {
                         mostrarError(data.error);
@@ -248,20 +264,54 @@
                     }
                 })
                 .catch(error => {
-                    console.error("Error:", error);
                     mostrarError("Ocurrió un problema de conexión.");
                     cerrarModalResena();
                 });
             }
+
+            function mostrarExito(mensaje) {
+                const cartel = document.getElementById("cartelExito");
+                cartel.innerHTML = mensaje;
+                cartel.style.display = "block"; 
+                setTimeout(() => cartel.style.display = "none", 3000);
+            }
+
+            function mostrarError(mensaje) {
+                const cartelError = document.getElementById("cartelError");
+                document.getElementById("textoError").innerText = "❌ " + mensaje;
+                cartelError.style.display = "block";
+                setTimeout(() => cartelError.style.display = "none", 4000);
+            }
         </script>
 
-        <!-- Modal oculto por defecto -->
+        <!-- MODAL: Subir comprobante de pago -->
+        <div id="modal-pago" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
+            <div style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin-top: 0; color: #333;">Confirmar Transferencia</h3>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Adjuntá la captura de pantalla o PDF del ticket del banco para que el propietario pueda verificarlo.</p>
+
+                <form id="form-pago" onsubmit="enviarComprobante(event)" enctype="multipart/form-data">
+                    <input type="hidden" id="pago-id-reserva" name="id">
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Foto del ticket</label>
+                        <input type="file" name="comprobante" accept="image/*, application/pdf" required style="width: 100%;">
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" onclick="cerrarModalPago()" style="background: #ccc; color: #333; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                        <button type="submit" id="btn-subir-pago" style="background: #e55e30; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Enviar comprobante</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Dejar reseña -->
         <div id="modal-resena" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
             <div style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 <h3 style="margin-top: 0;">Calificá tu estadía</h3>
 
                 <form id="form-resena" onsubmit="enviarResena(event)">
-                    <!-- Variables invisibles para el backend -->
                     <input type="hidden" id="resena-id-reserva" name="idReserva">
                     <input type="hidden" id="resena-id-propiedad" name="idPropiedad">
 

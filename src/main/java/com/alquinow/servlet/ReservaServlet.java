@@ -7,28 +7,30 @@ import com.alquinow.modelo.Reserva;
 import com.alquinow.modelo.Usuario;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.file.Paths;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-/**
- * Servlet para reservas. Requiere sesión de huésped.
- *
- *  GET  /reservas            -> lista las reservas del usuario logueado (JSON)
- *  POST /reservas            -> crea una reserva
- *  POST /reservas?accion=cancelar&id=3
- */
 @WebServlet("/reservas")
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 2,  
+    maxFileSize = 1024 * 1024 * 10,       
+    maxRequestSize = 1024 * 1024 * 50    
+)
 public class ReservaServlet extends HttpServlet {
 
     private final ReservaDAO reservaDAO = new ReservaDAO();
@@ -49,7 +51,16 @@ public class ReservaServlet extends HttpServlet {
         }
 
         try {
-            List<Reserva> reservas = reservaDAO.listarPorComprador(u.getIdUsuario());
+            String vista = req.getParameter("vista");
+            List<Reserva> reservas;
+            
+            // Verificamos si lo pide el panel del huésped o el panel del vendedor
+            if ("vendedor".equals(vista) && u.isVendedor()) {
+                reservas = reservaDAO.listarPorVendedor(u.getIdUsuario());
+            } else {
+                reservas = reservaDAO.listarPorComprador(u.getIdUsuario());
+            }
+
             StringBuilder sb = new StringBuilder("[");
             for (int i = 0; i < reservas.size(); i++) {
                 Reserva r = reservas.get(i);
@@ -63,6 +74,9 @@ public class ReservaServlet extends HttpServlet {
                   .append("\"fechaFinal\":\"").append(r.getFechaFinal()).append("\",")
                   .append("\"estado\":\"").append(safe(r.getEstado())).append("\",")
                   .append("\"montoTotal\":").append(r.getMontoTotal()).append(",")
+                  .append("\"metodoPago\":\"").append(safe(r.getMetodoPago())).append("\",")
+                  .append("\"comprobantePago\":\"").append(safe(r.getComprobantePago())).append("\",")
+                  .append("\"correoComprador\":\"").append(safe(r.getCorreoComprador())).append("\",")
                   .append("\"fechaLimitePago\":\"").append(r.getFechaLimitePago()).append("\"")
                   .append("}");
                 if (i < reservas.size() - 1) {
@@ -85,29 +99,35 @@ public class ReservaServlet extends HttpServlet {
         resp.setContentType("application/json; charset=UTF-8");
         PrintWriter out = resp.getWriter();
 
-        HttpSession session = req.getSession(false);
-        Usuario u = null;
-
-        if (session != null) {
-            u = (Usuario) session.getAttribute("usuario");
-        }
-
-        if (u == null || !u.isHuesped()) {
+        Usuario u = usuarioEnSesion(req);
+        if (u == null) {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            out.print("{\"ok\": false, \"error\": \"Acceso denegado. Debes iniciar sesión como huésped para reservar.\"}");
+            out.print("{\"ok\": false, \"error\": \"Acceso denegado. Debes iniciar sesión.\"}");
             return; 
         }
 
         try {
             String accion = req.getParameter("accion");
             
-            // --- NÚCLEO DE CANCELACIONES ---
+            // ACCIONES DEL DUEÑO: Aprobar o Rechazar el pago
+            if ("aprobar_pago".equals(accion) && u.isVendedor()) {
+                int id = Integer.parseInt(req.getParameter("id"));
+                boolean ok = reservaDAO.actualizarEstado(id, "sena_pagada");
+                out.print("{\"ok\":" + ok + "}");
+                return;
+            }
+            if ("rechazar_pago".equals(accion) && u.isVendedor()) {
+                int id = Integer.parseInt(req.getParameter("id"));
+                // Lo devolvemos a pendiente para que el huésped lo suba de nuevo
+                boolean ok = reservaDAO.actualizarEstado(id, "pendiente_sena"); 
+                out.print("{\"ok\":" + ok + "}");
+                return;
+            }
+
+            // ACCIONES DEL HUÉSPED:
             if ("cancelar".equals(accion)) {
                 int id = Integer.parseInt(req.getParameter("id"));
-                
-                // MODIFICACIÓN: Llamamos a nuestra función inteligente de cancelación
                 boolean ok = reservaDAO.cancelarReserva(id);
-                
                 if (ok) {
                     out.print("{\"ok\": true}");
                 } else {
@@ -115,8 +135,30 @@ public class ReservaServlet extends HttpServlet {
                 }
                 return;
             }
+            
+            // Subir comprobante del banco
+            if ("subir_comprobante".equals(accion)) {
+                int id = Integer.parseInt(req.getParameter("id"));
+                Part partComp = req.getPart("comprobante");
+                
+                if (partComp != null && partComp.getSize() > 0) {
+                    String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
+                    File uploadDir = new File(uploadPath);
+                    if (!uploadDir.exists()) uploadDir.mkdirs();
 
-            // --- NÚCLEO DE CREACIÓN DE RESERVAS ---
+                    String fName = Paths.get(partComp.getSubmittedFileName()).getFileName().toString();
+                    String nComp = System.currentTimeMillis() + "_ticket_" + fName;
+                    partComp.write(uploadPath + File.separator + nComp);
+                    
+                    boolean ok = reservaDAO.guardarComprobante(id, nComp);
+                    out.print("{\"ok\":" + ok + "}");
+                } else {
+                    out.print("{\"ok\":false, \"error\":\"No se detectó ningún archivo.\"}");
+                }
+                return;
+            }
+
+            // NÚCLEO DE CREACIÓN DE RESERVAS
             int idPropiedad = Integer.parseInt(req.getParameter("idPropiedad"));
             LocalDate inicio = LocalDate.parse(req.getParameter("fechaInicio"));
             LocalDate fin = LocalDate.parse(req.getParameter("fechaFinal"));
@@ -137,18 +179,29 @@ public class ReservaServlet extends HttpServlet {
             long noches = ChronoUnit.DAYS.between(inicio, fin);
             BigDecimal monto = p.getPrecioPorNoche().multiply(BigDecimal.valueOf(noches));
 
+            String metodoPagoElegido = req.getParameter("metodoPago");
+            if (metodoPagoElegido == null || metodoPagoElegido.isBlank()) {
+                metodoPagoElegido = "Transferencia";
+            }
+
             Reserva r = new Reserva();
             r.setIdCompradorFk(u.getIdUsuario());
             r.setIdPropiedadFk(idPropiedad);
             r.setFechaInicio(Date.valueOf(inicio));
             r.setFechaFinal(Date.valueOf(fin));
-            r.setEstado("pendiente_sena"); 
             r.setMontoTotal(monto);
+            r.setMetodoPago(metodoPagoElegido); 
             
-            // Guardamos el porcentaje de seña configurado por el dueño (o 30% por defecto)
+            // Si elige tarjeta, simulamos que el pago se aprobó al instante. Sino, queda pendiente.
+            if ("Tarjeta".equals(metodoPagoElegido)) {
+                r.setEstado("sena_pagada"); 
+            } else {
+                r.setEstado("pendiente_sena"); 
+            }
+            
             int porcentajeSena = p.getPorcentajeSena() > 0 ? p.getPorcentajeSena() : 30;
             r.setPorcentajeSenaAplicado(porcentajeSena);
-            r.setMontoPagado(BigDecimal.ZERO); // Arranca en 0 hasta que no procese el pago
+            r.setMontoPagado(BigDecimal.ZERO);
 
             int horasLimite = p.getHorasLimitePago() > 0 ? p.getHorasLimitePago() : 24;
             java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
@@ -160,7 +213,6 @@ public class ReservaServlet extends HttpServlet {
                 r.setDiasCancelacionAplicados(diasCancel);
                 r.setFechaLimiteCancelacion(Date.valueOf(inicio.minusDays(diasCancel)));
             } else {
-                // Si el dueño no puso nada, le damos 5 días por defecto
                 r.setDiasCancelacionAplicados(5);
                 r.setFechaLimiteCancelacion(Date.valueOf(inicio.minusDays(5)));
             }

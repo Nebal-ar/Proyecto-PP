@@ -2,22 +2,31 @@ package com.alquinow.servlet;
 
 import com.alquinow.dao.UsuarioDAO;
 import com.alquinow.modelo.Usuario;
-import com.alquinow.util.EmailUtil; // Importación de tu utilidad de correos
+import com.alquinow.util.EmailUtil;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.Random; // Importación para generar números aleatorios
+import java.nio.file.Paths;
+import java.util.Random;
 
 /**
  * Servlet que maneja el registro de nuevos usuarios.
- * Recibe los datos del formulario (registro.html) por POST.
+ * Recibe los datos del formulario (registro.html) por POST (incluyendo foto de perfil).
  */
 @WebServlet("/registro")
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 2,
+    maxFileSize = 1024 * 1024 * 10,
+    maxRequestSize = 1024 * 1024 * 20
+)
 public class RegistroServlet extends HttpServlet {
 
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
@@ -28,7 +37,6 @@ public class RegistroServlet extends HttpServlet {
 
         req.setCharacterEncoding("UTF-8");
 
-        // MODIFICACIÓN 1: Capturamos el nombre que viene del HTML
         String nombre = req.getParameter("nombre");
         String mail = req.getParameter("mail");
         String pass = req.getParameter("contrasena");
@@ -36,7 +44,7 @@ public class RegistroServlet extends HttpServlet {
         String tel = req.getParameter("tel");
         String rol = "comprador";
 
-        // 1. Validación de campos básicos (Agregamos validación para el nombre)
+        // 1. Validación de campos básicos (incluyendo nombre)
         if (nombre == null || nombre.isBlank() || mail == null || mail.isBlank() || pass == null || pass.isBlank()) {
             resp.sendRedirect(req.getContextPath() + "/registro.html?error=vacios");
             return;
@@ -62,35 +70,56 @@ public class RegistroServlet extends HttpServlet {
         
         try {
             // 5. Verificamos si el correo ya existe
-            if (usuarioDAO.existeMail(mail)) {
+            if (usuarioDAO.existeMail(mail.trim())) {
                 resp.sendRedirect(req.getContextPath() + "/registro.html?error=existe");
                 return;
             }
 
-            // 6. Generamos el código secreto de 6 dígitos
+            // 6. Procesamos y validamos la foto de perfil
+            String nombreFotoPerfil = null;
+            String contentType = req.getContentType();
+            if (contentType != null && contentType.toLowerCase().startsWith("multipart/")) {
+                Part partFoto = req.getPart("foto_perfil");
+                if (partFoto != null && partFoto.getSize() > 0 && partFoto.getSubmittedFileName() != null && !partFoto.getSubmittedFileName().isBlank()) {
+                    String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
+                    File uploadDir = new File(uploadPath);
+                    if (!uploadDir.exists()) {
+                        uploadDir.mkdirs();
+                    }
+                    String fileName = Paths.get(partFoto.getSubmittedFileName()).getFileName().toString();
+                    String safeFileName = fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+                    nombreFotoPerfil = System.currentTimeMillis() + "_perfil_" + safeFileName;
+                    partFoto.write(uploadPath + File.separator + nombreFotoPerfil);
+                }
+            }
+
+            if (nombreFotoPerfil == null) {
+                resp.sendRedirect(req.getContextPath() + "/registro.html?error=foto");
+                return;
+            }
+
+            // 7. Generamos el código secreto de 6 dígitos
             Random rnd = new Random();
             int numeroAleatorio = rnd.nextInt(999999);
             String codigoGenerado = String.format("%06d", numeroAleatorio);
 
             Usuario u = new Usuario();
-            
-            // MODIFICACIÓN 2: Le inyectamos el nombre al objeto Usuario
-            u.setNombre(nombre);
-            
-            u.setMail(mail);
+            u.setNombre(nombre.trim());
+            u.setMail(mail.trim());
             u.setContrasena(pass); // el DAO la hashea
-            u.setDni(dni);
-            u.setTel(tel);
+            u.setDni(dni.trim());
+            u.setTel(tel.trim());
             u.setCodigoVerificacion(codigoGenerado);
+            u.setFotoPerfil(nombreFotoPerfil);
 
             int id = usuarioDAO.registrar(u, rol);
             
             if (id > 0) {
-                // 7. Disparamos el correo real a través de tu cuenta de Gmail
-                EmailUtil.enviarCodigo(mail, codigoGenerado);
+                // 8. Disparamos el correo real a través de tu cuenta de Gmail
+                EmailUtil.enviarCodigo(mail.trim(), codigoGenerado);
                 
-                // 8. Mandamos al usuario a la pantalla de verificación con el mail en la URL
-                resp.sendRedirect(req.getContextPath() + "/verificar.html?mail=" + mail);
+                // 9. Mandamos al usuario a la pantalla de verificación con el mail en la URL
+                resp.sendRedirect(req.getContextPath() + "/verificar.html?mail=" + mail.trim());
             } else {
                 resp.sendRedirect(req.getContextPath() + "/registro.html?error=db");
             }

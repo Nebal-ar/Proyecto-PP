@@ -357,6 +357,8 @@ CREATE TABLE `usuario` (
   `es_huesped` tinyint(1) DEFAULT '1',
   `cuenta_activa` tinyint(1) DEFAULT '0',
   `codigo_verificacion` varchar(6) DEFAULT NULL,
+  `foto_perfil` varchar(255) DEFAULT NULL,
+  `es_admin` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`ID_usuario`),
   UNIQUE KEY `mail` (`mail`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -368,7 +370,7 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
-INSERT INTO `usuario` VALUES (1,NULL,'$2a$12$kAwExYfPbRyJ8H4eCk2gNeO51dWm9V1QPV0vmediEzuuG5/RzzkBu','46920939','pepito123@gmail.com','2914146715',1,1,0,NULL),(2,NULL,'$2a$12$DEArvVrsMiYHN81M.GJJ6.cZ2d.gxWQ4lKmv9WvVmeeFh5yhQilre','46939969','vendedor@alquinow.com','2914126513',1,1,0,NULL),(7,'Demian','$2a$12$iO4yT1.mlUa3DR3A/HDwmOs2PP5jTGlxD55nF0uTDEosrqkEmErH.','46939920','demiancastro697@gmail.com','+5492914136815',1,1,1,NULL),(8,NULL,'$2a$12$9.4u07xnvw50BIeEbEdpPOSByQgXPvQMDCTEnHjDpkVTGaI4vyuuO','46939920','salasprueba1@gmail.com','+5492914136815',1,1,1,NULL);
+INSERT INTO `usuario` VALUES (1,NULL,'$2a$12$kAwExYfPbRyJ8H4eCk2gNeO51dWm9V1QPV0vmediEzuuG5/RzzkBu','46920939','pepito123@gmail.com','2914146715',1,1,0,NULL,NULL,1),(2,NULL,'$2a$12$DEArvVrsMiYHN81M.GJJ6.cZ2d.gxWQ4lKmv9WvVmeeFh5yhQilre','46939969','vendedor@alquinow.com','2914126513',1,1,0,NULL,NULL,1),(7,'Demian','$2a$12$iO4yT1.mlUa3DR3A/HDwmOs2PP5jTGlxD55nF0uTDEosrqkEmErH.','46939920','demiancastro697@gmail.com','+5492914136815',1,1,1,NULL,NULL,1),(8,NULL,'$2a$12$9.4u07xnvw50BIeEbEdpPOSByQgXPvQMDCTEnHjDpkVTGaI4vyuuO','46939920','salasprueba1@gmail.com','+5492914136815',1,1,1,NULL,NULL,1);
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 

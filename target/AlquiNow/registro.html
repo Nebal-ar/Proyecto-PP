@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crear cuenta — AlquiNow</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/estilos.css?v=6">
 </head>
 <body>
 
@@ -16,27 +16,39 @@
     </nav>
   </header>
 
-  <div class="form-box">
+  <div class="form-box" style="max-width: 480px;">
     <h1>Creá tu cuenta</h1>
-    <p class="sub">Es gratis y toma un minuto.</p>
+    <p class="sub">Completá tus datos y elegí tu foto de perfil para empezar.</p>
 
     <!-- CAJA PARA MENSAJES DE ERROR (Oculta por defecto) -->
     <div id="alerta-error" style="display: none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-weight: bold;"></div>
 
-    <form action="registro" method="post">
+    <form action="registro" method="post" enctype="multipart/form-data">
       
-      <!-- CAMPO NOMBRE AGREGADO ACÁ -->
-      <label for="nombre">Nombre</label>
-      <input type="text" id="nombre" name="nombre" required>
+      <!-- FOTO DE PERFIL OBLIGATORIA CON MINIATURA CIRCULAR FIJA (88x88px) -->
+      <div style="display: flex; align-items: center; gap: 16px; padding: 14px; background: #f5f3ee; border: 1px solid #e2ddd2; border-radius: 12px; margin-bottom: 1rem;">
+        <div style="width: 80px; height: 80px; min-width: 80px; max-width: 80px; min-height: 80px; max-height: 80px; border-radius: 50%; overflow: hidden; border: 3px solid #e0603a; background: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <img id="imgPreviewRegistro" src="" width="80" height="80" alt="Vista previa" style="display: none; width: 80px !important; height: 80px !important; max-width: 80px !important; max-height: 80px !important; object-fit: cover !important; border-radius: 50% !important;">
+          <span id="iconoDefaultRegistro" style="font-size: 2rem; line-height: 1; user-select: none;">📷</span>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <label for="foto_perfil" style="margin-top: 0; margin-bottom: 6px; color: #1d2433; font-weight: 700;">Foto de perfil *</label>
+          <input type="file" id="foto_perfil" name="foto_perfil" accept="image/*" required onchange="previsualizarFotoRegistro(this)" style="padding: 6px; font-size: 0.85rem; background: #fff; border: 1px solid #ccc; border-radius: 8px; width: 100%;">
+          <small style="display: block; color: #6b7280; font-size: 0.75rem; margin-top: 4px;">Se adapta automáticamente al círculo de tu perfil.</small>
+        </div>
+      </div>
+
+      <label for="nombre">Nombre de usuario</label>
+      <input type="text" id="nombre" name="nombre" placeholder="Ej: Demian" required>
 
       <label for="mail">Mail</label>
-      <input type="email" id="mail" name="mail" required>
+      <input type="email" id="mail" name="mail" placeholder="tu@correo.com" required>
 
       <label for="contrasena">Contraseña</label>
       <input type="password" id="contrasena" name="contrasena" pattern="(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}" title="Debe tener al menos 8 caracteres, incluir una mayúscula y un carácter especial (ej: ! @ # $ * . - _)" required>
 
       <label for="dni">DNI</label>
-      <input type="text" id="dni" name="dni" pattern="\d{8}" maxlength="8" title="Ingresá exactamente 8 números sin puntos ni letras" required>
+      <input type="text" id="dni" name="dni" pattern="\d{8}" maxlength="8" placeholder="8 dígitos sin puntos" title="Ingresá exactamente 8 números sin puntos ni letras" required>
 
       <label for="tel">Teléfono</label>
       <input type="text" id="tel" name="tel" value="+549" pattern="\+549\d{10}" maxlength="14" title="Debe empezar con +549 seguido de tu código de área y número (ej: +5492914567890)" required>
@@ -50,6 +62,26 @@
   </div>
 
   <script>
+    function previsualizarFotoRegistro(input) {
+      const img = document.getElementById('imgPreviewRegistro');
+      const icono = document.getElementById('iconoDefaultRegistro');
+
+      if (input.files && input.files[0]) {
+        const archivo = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          img.src = e.target.result;
+          img.style.display = 'block';
+          icono.style.display = 'none';
+        };
+        reader.readAsDataURL(archivo);
+      } else {
+        img.src = '';
+        img.style.display = 'none';
+        icono.style.display = 'block';
+      }
+    }
+
     // Lee la URL para ver si Java mandó algún código de error
     const urlParams = new URLSearchParams(window.location.search);
     const errorDiv = document.getElementById('alerta-error');
@@ -60,14 +92,16 @@
       
       if (tipoError === 'existe') {
         errorDiv.innerHTML = 'Ese mail ya está registrado. <a href="login.html" style="color: #c62828; text-decoration: underline;">Ingresá acá</a>.';
+      } else if (tipoError === 'foto') {
+        errorDiv.innerText = 'Por favor, subí una foto de perfil para crear tu cuenta.';
       } else if (tipoError === 'dni') {
         errorDiv.innerText = 'El DNI es inválido. Debe contener exactamente 8 números.';
       } else if (tipoError === 'tel') {
-        errorDiv.innerText = 'El teléfono es inválido. Verificá el formato.';
+        errorDiv.innerText = 'El teléfono es inválido. Verificá el formato (+549 + 10 dígitos).';
       } else if (tipoError === 'pass') {
         errorDiv.innerText = 'La contraseña es muy débil. Revisá los requisitos.';
       } else if (tipoError === 'vacios') {
-        errorDiv.innerText = 'El mail y la contraseña son obligatorios.';
+        errorDiv.innerText = 'Todos los campos son obligatorios.';
       } else {
         errorDiv.innerText = 'Ocurrió un error. Verificá tus datos.';
       }

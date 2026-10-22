@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Perfil — AlquiNow</title>
+  <link rel="stylesheet" href="css/estilos.css?v=6">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
+    <nav class="nav-links">
+      <a href="index.html">Buscar</a>
+    </nav>
+  </header>
+
+  <main class="contenedor" style="max-width: 680px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem;">
+      <div>
+        <h1 style="margin-bottom: 0.2rem;">Mi Perfil</h1>
+        <p style="color: var(--gris);">Administrá tu foto de perfil, nombre de usuario y datos de contacto.</p>
+      </div>
+      <div id="badges-rol" style="display: flex; gap: 0.5rem;"></div>
+    </div>
+
+    <!-- Alertas de respuesta -->
+    <div id="mensaje-perfil"></div>
+
+    <div class="form-box" style="max-width: none; margin: 0;">
+      <form id="formPerfil" onsubmit="guardarPerfil(event)" enctype="multipart/form-data">
+        <input type="hidden" id="eliminar_foto" name="eliminar_foto" value="false">
+
+        <!-- SECCIÓN FOTO DE PERFIL CON TAMAÑO FIJO (96x96px) -->
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 18px; background: #f5f3ee; border: 1px solid #e2ddd2; border-radius: 12px; margin-bottom: 1.5rem;">
+          <div style="width: 96px; height: 96px; min-width: 96px; max-width: 96px; min-height: 96px; max-height: 96px; border-radius: 50%; overflow: hidden; border: 3px solid #e0603a; background: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <img id="imgPreviewPerfil" src="" width="96" height="96" alt="Foto de perfil" style="display: none; width: 96px !important; height: 96px !important; min-width: 96px !important; max-width: 96px !important; min-height: 96px !important; max-height: 96px !important; object-fit: cover !important; border-radius: 50% !important;">
+            <span id="inicialPerfil" style="font-size: 2.2rem; font-weight: 800; color: #e0603a; line-height: 1; user-select: none;">👤</span>
+          </div>
+
+          <div style="flex: 1; min-width: 220px;">
+            <label for="foto_perfil" style="margin-top: 0; margin-bottom: 6px; font-weight: 700; color: #1d2433;">Cambiar foto de perfil</label>
+            <input type="file" id="foto_perfil" name="foto_perfil" accept="image/*" onchange="previsualizarNuevaFoto(this)" style="padding: 7px; font-size: 0.88rem; background: #fff; border: 1px solid #ccc; border-radius: 8px; width: 100%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+              <small id="textoEstadoFoto" style="color: #6b7280; font-size: 0.78rem;">
+                La imagen se recorta y adapta automáticamente al círculo.
+              </small>
+              <button type="button" id="btnQuitarFoto" onclick="quitarFotoPerfil()" style="display: none; padding: 4px 10px; font-size: 0.78rem; font-weight: 700; color: #c62828; border: 1px solid #f5c2c7; background: #fff5f5; border-radius: 6px; cursor: pointer;">
+                🗑️ Quitar foto actual
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATOS PERSONALES -->
+        <h3 style="margin-top: 0.5rem; margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--borde); font-size: 1.1rem;">
+          Datos personales y de contacto
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+          <div>
+            <label for="nombre">Nombre de usuario</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Tu nombre o apodo" required>
+          </div>
+
+          <div>
+            <label for="tel">Número de teléfono</label>
+            <input type="text" id="tel" name="tel" placeholder="+5492914567890" pattern="\+549\d{10}" maxlength="14" title="Debe empezar con +549 seguido de 10 dígitos (ej: +5492914567890)" required>
+            <small style="color: var(--gris); font-size: 0.78rem;">Formato: +549 seguido de código de área y número (10 dígitos).</small>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 0.3rem;">
+          <div>
+            <label for="dni">DNI</label>
+            <input type="text" id="dni" name="dni" pattern="\d{8}" maxlength="8" placeholder="8 dígitos sin puntos" title="Ingresá exactamente 8 números" required>
+          </div>
+
+          <div>
+            <label for="mail">Correo electrónico</label>
+            <input type="email" id="mail" name="mail" required>
+          </div>
+        </div>
+
+        <!-- CAMBIO DE CONTRASEÑA OPCIONAL -->
+        <div style="margin-top: 1.8rem; border-top: 1px solid var(--borde); padding-top: 1.2rem;">
+          <button type="button" onclick="toggleSeccionPassword()" class="btn btn-sec" style="padding: 0.5rem 1rem; font-size: 0.9rem; width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+            <span>🔒 Cambiar contraseña <small style="color: var(--gris); font-weight: normal;">(Opcional)</small></span>
+            <span id="iconoFlechaPass">▼</span>
+          </button>
+
+          <div id="seccionPassword" style="display: none; margin-top: 1rem; padding: 1.1rem; background: var(--niebla); border-radius: 10px; border: 1px solid var(--borde);">
+            <p style="font-size: 0.85rem; color: var(--gris); margin-bottom: 0.8rem;">
+              Completá estos campos únicamente si querés actualizar tu contraseña actual.
+            </p>
+
+            <label for="contrasena_actual" style="margin-top: 0;">Contraseña actual</label>
+            <input type="password" id="contrasena_actual" name="contrasena_actual" style="background: var(--papel);" placeholder="Ingresá tu contraseña actual">
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-top: 0.3rem;">
+              <div>
+                <label for="nueva_contrasena">Nueva contraseña</label>
+                <input type="password" id="nueva_contrasena" name="nueva_contrasena" style="background: var(--papel);" pattern="(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}" title="Al menos 8 caracteres, una mayúscula y un carácter especial" placeholder="Mínimo 8 caracteres">
+              </div>
+
+              <div>
+                <label for="confirmar_contrasena">Repetir nueva contraseña</label>
+                <input type="password" id="confirmar_contrasena" name="confirmar_contrasena" style="background: var(--papel);" placeholder="Repetí la nueva contraseña">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.8rem; flex-wrap: wrap;">
+          <a href="index.html" class="btn btn-sec" style="text-align: center;">Volver al inicio</a>
+          <button type="submit" id="btnGuardarPerfil" class="btn">💾 Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/session.js?v=6"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarDatosPerfil();
+    });
+
+    function cargarDatosPerfil() {
+      fetch('perfil?t=' + new Date().getTime())
+        .then(res => {
+          if (res.status === 401) {
+            window.location.href = 'login.html?required=1';
+            throw new Error('No autorizado');
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (!data || !data.conectado) {
+            window.location.href = 'login.html?required=1';
+            return;
+          }
+
+          renderizarDatosEnFormulario(data);
+        })
+        .catch(err => {
+          console.error("Error cargando perfil:", err);
+        });
+    }
+
+    function renderizarDatosEnFormulario(data) {
+      document.getElementById('nombre').value = data.nombre || '';
+      document.getElementById('mail').value = data.mail || '';
+      document.getElementById('dni').value = data.dni || '';
+      document.getElementById('tel').value = (data.tel && data.tel.startsWith('+549'))
+        ? data.tel
+        : (data.tel ? '+549' + data.tel.replace(/^\+?549?/, '') : '+549');
+
+      // Badges de rol
+      const badgesCont = document.getElementById('badges-rol');
+      let badgesHtml = '';
+      if (data.esHuesped) {
+        badgesHtml += `<span class="badge" style="font-size: 0.8rem; padding: 0.3rem 0.75rem;">🧳 Huésped</span>`;
+      }
+      if (data.esVendedor) {
+        badgesHtml += `<span class="badge" style="font-size: 0.8rem; padding: 0.3rem 0.75rem; background: rgba(224, 96, 58, 0.14); color: var(--brasa-osc);">🏠 Anfitrión</span>`;
+      }
+      badgesCont.innerHTML = badgesHtml;
+
+      // Foto de perfil o inicial
+      const img = document.getElementById('imgPreviewPerfil');
+      const inicialSpan = document.getElementById('inicialPerfil');
+      const btnQuitar = document.getElementById('btnQuitarFoto');
+      const textoFoto = document.getElementById('textoEstadoFoto');
+
+      const letraInicial = (data.nombre && data.nombre.trim() !== '')
+        ? data.nombre.trim().charAt(0).toUpperCase()
+        : (data.mail ? data.mail.charAt(0).toUpperCase() : '👤');
+      inicialSpan.innerText = letraInicial;
+
+      document.getElementById('eliminar_foto').value = 'false';
+      document.getElementById('foto_perfil').value = '';
+
+      if (data.fotoPerfil && data.fotoPerfil.trim() !== '') {
+        img.src = 'uploads/' + encodeURI(data.fotoPerfil.trim());
+        img.style.display = 'block';
+        inicialSpan.style.display = 'none';
+        btnQuitar.style.display = 'inline-block';
+        textoFoto.innerText = 'Foto de perfil actual activa (96x96px)';
+      } else {
+        img.src = '';
+        img.style.display = 'none';
+        inicialSpan.style.display = 'block';
+        btnQuitar.style.display = 'none';
+        textoFoto.innerText = 'Sin foto de perfil (mostrando inicial)';
+      }
+    }
+
+    function previsualizarNuevaFoto(input) {
+      const img = document.getElementById('imgPreviewPerfil');
+      const inicialSpan = document.getElementById('inicialPerfil');
+      const btnQuitar = document.getElementById('btnQuitarFoto');
+      const textoFoto = document.getElementById('textoEstadoFoto');
+
+      if (input.files && input.files[0]) {
+        const archivo = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          img.src = e.target.result;
+          img.style.display = 'block';
+          inicialSpan.style.display = 'none';
+          btnQuitar.style.display = 'inline-block';
+        };
+        reader.readAsDataURL(archivo);
+        document.getElementById('eliminar_foto').value = 'false';
+        textoFoto.innerText = 'Nueva foto seleccionada: ' + archivo.name;
+      }
+    }
+
+    function quitarFotoPerfil() {
+      const img = document.getElementById('imgPreviewPerfil');
+      const inicialSpan = document.getElementById('inicialPerfil');
+      const btnQuitar = document.getElementById('btnQuitarFoto');
+      const textoFoto = document.getElementById('textoEstadoFoto');
+
+      document.getElementById('foto_perfil').value = '';
+      document.getElementById('eliminar_foto').value = 'true';
+
+      img.src = '';
+      img.style.display = 'none';
+      inicialSpan.style.display = 'block';
+      btnQuitar.style.display = 'none';
+      textoFoto.innerText = 'La foto se quitará al guardar los cambios.';
+    }
+
+    function toggleSeccionPassword() {
+      const seccion = document.getElementById('seccionPassword');
+      const flecha = document.getElementById('iconoFlechaPass');
+      if (seccion.style.display === 'none') {
+        seccion.style.display = 'block';
+        flecha.innerText = '▲';
+      } else {
+        seccion.style.display = 'none';
+        flecha.innerText = '▼';
+        document.getElementById('contrasena_actual').value = '';
+        document.getElementById('nueva_contrasena').value = '';
+        document.getElementById('confirmar_contrasena').value = '';
+      }
+    }
+
+    function guardarPerfil(event) {
+      event.preventDefault();
+
+      const msgDiv = document.getElementById('mensaje-perfil');
+      const btn = document.getElementById('btnGuardarPerfil');
+      const nuevaPass = document.getElementById('nueva_contrasena').value;
+      const confirmarPass = document.getElementById('confirmar_contrasena').value;
+
+      if (nuevaPass && nuevaPass !== confirmarPass) {
+        msgDiv.innerHTML = `<div class="alerta alerta-error">❌ Las contraseñas nuevas no coinciden.</div>`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      const form = document.getElementById('formPerfil');
+      const formData = new FormData(form);
+
+      btn.disabled = true;
+      btn.innerText = 'Guardando...';
+      msgDiv.innerHTML = '';
+
+      fetch('perfil', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.ok) {
+          msgDiv.innerHTML = `<div class="alerta alerta-ok">✅ ${res.mensaje || '¡Perfil actualizado correctamente!'}</div>`;
+          if (res.perfil) {
+            renderizarDatosEnFormulario(res.perfil);
+          }
+          // Limpiar campos de contraseña
+          document.getElementById('contrasena_actual').value = '';
+          document.getElementById('nueva_contrasena').value = '';
+          document.getElementById('confirmar_contrasena').value = '';
+          document.getElementById('seccionPassword').style.display = 'none';
+          document.getElementById('iconoFlechaPass').innerText = '▼';
+
+          // Refrescar la barra superior con el nuevo nombre y foto
+          if (window.actualizarNavbarSesion) {
+            window.actualizarNavbarSesion();
+          }
+        } else {
+          msgDiv.innerHTML = `<div class="alerta alerta-error">❌ ${res.error || 'No se pudo actualizar el perfil.'}</div>`;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(err => {
+        console.error("Error guardando perfil:", err);
+        msgDiv.innerHTML = `<div class="alerta alerta-error">❌ Error de conexión al guardar los cambios.</div>`;
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = '💾 Guardar cambios';
+      });
+    }
+  </script>
+</body>
+</html>

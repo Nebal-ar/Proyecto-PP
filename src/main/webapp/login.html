@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ingresar — AlquiNow</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/estilos.css?v=6">
 </head>
 <body>
 
@@ -24,28 +24,35 @@
     <div id="msg"></div>
     
     <!-- Cartel de éxito (Oculto por defecto) -->
-<div id="alerta-exito" style="display: none; background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-weight: bold;"></div>
+    <div id="alerta-exito" style="display: none; background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-weight: bold;"></div>
 
     <!-- El form envía POST al servlet /login -->
     <form action="login" method="post">
       <label for="mail">Mail</label>
       <input type="email" id="mail" name="mail" required>
 
-      <label for="contrasena">Contraseña</label>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 0.9rem 0 0.3rem;">
+        <label for="contrasena" style="margin: 0;">Contraseña</label>
+        <a href="recuperar.html" style="font-size: 0.85rem; color: var(--brasa); font-weight: 600; text-decoration: none;">¿Olvidaste tu contraseña?</a>
+      </div>
       <input type="password" id="contrasena" name="contrasena" required>
 
       <button type="submit" class="btn btn-block">Ingresar</button>
     </form>
 
-    <p style="text-align:center; margin-top:1.2rem; color:var(--gris);">
-      ¿No tenés cuenta? <a href="registro.html" style="color:var(--brasa);">Registrate</a>
+    <p style="text-align:center; margin-top: 1rem;">
+      <a href="recuperar.html" style="color: var(--gris); font-size: 0.9rem; text-decoration: underline;">Recuperar contraseña con mi correo</a>
+    </p>
+
+    <p style="text-align:center; margin-top: 0.8rem; color:var(--gris);">
+      ¿No tenés cuenta? <a href="registro.html" style="color:var(--brasa); font-weight: 600;">Registrate</a>
     </p>
   </div>
 
- <script>
-    // Mostramos mensajes según parámetros en la URL
+  <script>
     const params = new URLSearchParams(location.search);
     const msg = document.getElementById("msg");
+    const exitoDiv = document.getElementById("alerta-exito");
     
     // Caso 1: Viene de registrarse
     if (params.get("registrado")) {
@@ -57,29 +64,26 @@
       msg.innerHTML = '<div class="alerta alerta-error">Necesitás iniciar sesión para ver esa página.</div>';
     }
 
-    // Caso 3: Se equivocó de mail o contraseña (el que sumamos ahora)
+    // Caso 3: Se equivocó de mail o contraseña
     if (params.get("error")) {
       msg.innerHTML = '<div class="alerta alerta-error">Mail o contraseña incorrectos.</div>';
       window.history.replaceState({}, document.title, "login.html");
     }
-  </script>
- 
-  <script>
-  // Lee los parámetros de la URL
-  const urlParams = new URLSearchParams(window.location.search);
-  
-  // Si detecta la palabra "verificado", enciende la caja verde
-  if (urlParams.has('verificado')) {
-    const exitoDiv = document.getElementById('alerta-exito');
-    exitoDiv.style.display = 'block';
-    exitoDiv.innerText = '¡Tu cuenta fue activada con éxito! Ya podés ingresar.';
-  }
 
-  // Opcional: Si querés atajar errores de credenciales desde LoginServlet
-  if (urlParams.has('error') && urlParams.get('error') === 'credenciales') {
-    // Necesitarías un div rojo similar con id="alerta-error"
-    // document.getElementById('alerta-error').style.display = 'block';
-  }
-</script>
+    // Caso 4: Activó la cuenta por correo
+    if (params.has("verificado")) {
+      exitoDiv.style.display = "block";
+      exitoDiv.innerText = "¡Tu cuenta fue activada con éxito! Ya podés ingresar.";
+    }
+
+    // Caso 5: Restableció su contraseña con éxito
+    if (params.has("recuperado")) {
+      exitoDiv.style.display = "block";
+      exitoDiv.innerText = "✅ ¡Contraseña actualizada con éxito! Ya podés ingresar con tu nueva contraseña.";
+      if (params.get("mail")) {
+        document.getElementById("mail").value = params.get("mail");
+      }
+    }
+  </script>
 </body>
 </html>

@@ -45,6 +45,13 @@ public class PropiedadServlet extends HttpServlet {
                 return;
             }
 
+            String vendedorParam = req.getParameter("vendedor");
+            if (vendedorParam != null && !vendedorParam.isBlank()) {
+                List<Propiedad> misProps = propiedadDAO.listarPorVendedor(Integer.parseInt(vendedorParam));
+                out.print(listaAJson(misProps));
+                return;
+            }
+
             String ciudad = req.getParameter("ciudad");
             String provincia = req.getParameter("provincia");
             Integer precioMax = parseEntero(req.getParameter("precioMax"));

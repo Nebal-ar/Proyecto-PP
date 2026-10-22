@@ -38,6 +38,13 @@ public class Propiedad {
     private int horasLimitePago;
     private String aliasCbu;
 
+    // Datos del dueño / vendedor (para verificación del administrador)
+    private String nombreVendedor;
+    private String dniVendedor;
+    private String mailVendedor;
+    private String telVendedor;
+    private String fotoPerfilVendedor;
+
     public Propiedad() {
     }
 
@@ -110,4 +117,19 @@ public class Propiedad {
 
     public String getMotivoRechazo() { return motivoRechazo; }
     public void setMotivoRechazo(String motivoRechazo) { this.motivoRechazo = motivoRechazo; }
+
+    public String getNombreVendedor() { return nombreVendedor; }
+    public void setNombreVendedor(String nombreVendedor) { this.nombreVendedor = nombreVendedor; }
+
+    public String getDniVendedor() { return dniVendedor; }
+    public void setDniVendedor(String dniVendedor) { this.dniVendedor = dniVendedor; }
+
+    public String getMailVendedor() { return mailVendedor; }
+    public void setMailVendedor(String mailVendedor) { this.mailVendedor = mailVendedor; }
+
+    public String getTelVendedor() { return telVendedor; }
+    public void setTelVendedor(String telVendedor) { this.telVendedor = telVendedor; }
+
+    public String getFotoPerfilVendedor() { return fotoPerfilVendedor; }
+    public void setFotoPerfilVendedor(String fotoPerfilVendedor) { this.fotoPerfilVendedor = fotoPerfilVendedor; }
 }

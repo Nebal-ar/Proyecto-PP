@@ -233,6 +233,83 @@ public class PropiedadDAO {
         
         return p;
     }
+
+    /** Lista todas las propiedades con los datos del dueño para el Panel de Administrador. */
+    public List<Propiedad> listarTodasParaAdmin() throws SQLException {
+        String sql = "SELECT p.*, "
+                   + "u.nombre AS vendedor_nombre, u.dni AS vendedor_dni, "
+                   + "u.mail AS vendedor_mail, u.tel AS vendedor_tel, u.foto_perfil AS vendedor_foto "
+                   + "FROM Propiedad p "
+                   + "LEFT JOIN Usuario u ON p.ID_vendedor_fk = u.ID_usuario "
+                   + "ORDER BY CASE "
+                   + "  WHEN p.estado_verificacion = 'pendiente' OR p.estado_verificacion IS NULL THEN 0 "
+                   + "  WHEN p.estado_verificacion = 'rechazada' THEN 1 "
+                   + "  ELSE 2 "
+                   + "END, p.ID_propiedad DESC";
+
+        List<Propiedad> lista = new ArrayList<>();
+        try (Connection con = Conexion.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Propiedad p = mapear(rs);
+                p.setNombreVendedor(rs.getString("vendedor_nombre"));
+                p.setDniVendedor(rs.getString("vendedor_dni"));
+                p.setMailVendedor(rs.getString("vendedor_mail"));
+                p.setTelVendedor(rs.getString("vendedor_tel"));
+                try {
+                    p.setFotoPerfilVendedor(rs.getString("vendedor_foto"));
+                } catch (SQLException ignored) {
+                }
+                lista.add(p);
+            }
+        }
+        return lista;
+    }
+
+    /** Aprueba (da de alta) una propiedad verificada por el administrador. */
+    public boolean aprobarPropiedad(int idPropiedad) throws SQLException {
+        String sqlProp = "UPDATE Propiedad SET estado_verificacion = 'aprobada', motivo_rechazo = NULL WHERE ID_propiedad = ?";
+        String sqlVend = "UPDATE Vendedor SET verificado = 1 WHERE ID_usuario = (SELECT ID_vendedor_fk FROM Propiedad WHERE ID_propiedad = ?)";
+
+        try (Connection con = Conexion.getConexion()) {
+            boolean ok;
+            try (PreparedStatement ps = con.prepareStatement(sqlProp)) {
+                ps.setInt(1, idPropiedad);
+                ok = ps.executeUpdate() > 0;
+            }
+            if (ok) {
+                try (PreparedStatement psV = con.prepareStatement(sqlVend)) {
+                    psV.setInt(1, idPropiedad);
+                    psV.executeUpdate();
+                } catch (SQLException ignored) {
+                }
+            }
+            return ok;
+        }
+    }
+
+    /** Rechaza una propiedad guardando el motivo indicado por el administrador. */
+    public boolean rechazarPropiedad(int idPropiedad, String motivoRechazo) throws SQLException {
+        String sql = "UPDATE Propiedad SET estado_verificacion = 'rechazada', motivo_rechazo = ? WHERE ID_propiedad = ?";
+        try (Connection con = Conexion.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, motivoRechazo);
+            ps.setInt(2, idPropiedad);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /** Pasa una propiedad de nuevo a estado pendiente de revisión. */
+    public boolean ponerPendientePropiedad(int idPropiedad) throws SQLException {
+        String sql = "UPDATE Propiedad SET estado_verificacion = 'pendiente' WHERE ID_propiedad = ?";
+        try (Connection con = Conexion.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idPropiedad);
+            return ps.executeUpdate() > 0;
+        }
+    }
     
     public boolean existePropiedad(String calle, int altura, String ciudad, String piso) throws SQLException {
         String sql = "SELECT COUNT(*) FROM propiedad WHERE calle = ? AND altura = ? AND ciudad = ?";

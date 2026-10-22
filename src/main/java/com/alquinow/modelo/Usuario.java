@@ -17,6 +17,10 @@ public class Usuario {
     private boolean cuentaActiva;
     private String codigoVerificacion;
 
+    // FOTO DE PERFIL Y ROL ADMIN
+    private String fotoPerfil;
+    private boolean esAdmin;
+
     public Usuario() {
     }
 
@@ -56,4 +60,10 @@ public class Usuario {
 
     public String getCodigoVerificacion() { return codigoVerificacion; }
     public void setCodigoVerificacion(String codigoVerificacion) { this.codigoVerificacion = codigoVerificacion; }
+
+    public String getFotoPerfil() { return fotoPerfil; }
+    public void setFotoPerfil(String fotoPerfil) { this.fotoPerfil = fotoPerfil; }
+
+    public boolean isAdmin() { return esAdmin; }
+    public void setEsAdmin(boolean esAdmin) { this.esAdmin = esAdmin; }
 }

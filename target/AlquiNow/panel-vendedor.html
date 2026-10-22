@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel del anfitrión — AlquiNow</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/estilos.css?v=6">
   
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
@@ -374,11 +374,10 @@
 
           const miId = sessionData.usuario.idUsuario;
 
-          return fetch('propiedades')
+          return fetch('propiedades?vendedor=' + miId)
             .then(res => res.json())
-            .then(propiedades => {
+            .then(misProps => {
               const contenedor = document.getElementById("mis-publicaciones");
-              const misProps = propiedades.filter(p => p.idVendedor === miId || p.idVendedorFk === miId);
 
               if (misProps.length === 0) {
                 contenedor.innerHTML = '<p style="color: var(--gris);">Todavía no publicaste ninguna propiedad.</p>';
@@ -521,6 +520,6 @@
       .catch(err => console.error("Error:", err));
     }
   </script>
-  <script src="js/session.js"></script>
+  <script src="js/session.js?v=6"></script>
 </body>
 </html>

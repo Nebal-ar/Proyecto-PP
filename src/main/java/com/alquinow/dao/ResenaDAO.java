@@ -34,7 +34,7 @@ public class ResenaDAO {
         List<Resena> resenas = new ArrayList<>();
         
         // Unimos directamente resena con usuario usando los nombres exactos de tu BD
-        String sql = "SELECT r.*, u.mail "
+        String sql = "SELECT r.*, u.mail, u.nombre "
                    + "FROM resena r "
                    + "LEFT JOIN usuario u ON r.ID_comprador_fk = u.ID_usuario "
                    + "WHERE r.ID_propiedad_fk = ? "
@@ -61,8 +61,16 @@ public class ResenaDAO {
                         r.setFecha(new Timestamp(System.currentTimeMillis()));
                     }
                     
+                    String nombre = rs.getString("nombre");
                     String mail = rs.getString("mail");
-                    String nombreMostrado = (mail != null && mail.contains("@")) ? mail.split("@")[0] : "Huésped verificado";
+                    String nombreMostrado;
+                    if (nombre != null && !nombre.isBlank()) {
+                        nombreMostrado = nombre.trim();
+                    } else if (mail != null && mail.contains("@")) {
+                        nombreMostrado = mail.split("@")[0];
+                    } else {
+                        nombreMostrado = "Huésped verificado";
+                    }
                     r.setNombreUsuario(nombreMostrado);
                     
                     resenas.add(r);

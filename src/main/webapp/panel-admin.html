@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración — Verificación de Propiedades | AlquiNow</title>
+  <link rel="stylesheet" href="css/estilos.css?v=6">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
+    <nav class="nav-links">
+      <a href="index.html">Buscar</a>
+    </nav>
+  </header>
+
+  <main class="contenedor" style="max-width: 980px;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+      <div>
+        <span style="display: inline-block; background: rgba(13, 110, 253, 0.12); color: #0d6efd; font-weight: 800; font-size: 0.78rem; padding: 4px 10px; border-radius: 999px; margin-bottom: 6px;">
+          🛡️ CONTROL DE SEGURIDAD Y ANTIFRAUDE
+        </span>
+        <h1 style="margin-bottom: 0.25rem;">Panel de Verificación del Administrador</h1>
+        <p style="color: var(--gris); max-width: 680px;">
+          Verificá que quien publica sea el verdadero propietario comparando sus datos personales (Nombre y DNI) con el <strong>comprobante de titularidad</strong> y la <strong>foto en tiempo real con fecha</strong> antes de dar de alta la propiedad en el catálogo.
+        </p>
+      </div>
+    </div>
+
+    <!-- CONTADORES RESUMEN -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      <div onclick="filtrarPorEstado('pendiente')" style="background: #fff8e6; border: 2px solid #ffc107; border-radius: 12px; padding: 1rem 1.25rem; cursor: pointer;">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #856404;">⏳ EN ESPERA DE ALTA</div>
+        <div id="count-pendientes" style="font-size: 1.9rem; font-weight: 900; color: #856404; line-height: 1.2; margin-top: 4px;">0</div>
+        <small style="color: #856404;">Pendientes de revisión</small>
+      </div>
+
+      <div onclick="filtrarPorEstado('aprobada')" style="background: #eaf6f0; border: 2px solid #28a745; border-radius: 12px; padding: 1rem 1.25rem; cursor: pointer;">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #155724;">✅ DADAS DE ALTA</div>
+        <div id="count-aprobadas" style="font-size: 1.9rem; font-weight: 900; color: #155724; line-height: 1.2; margin-top: 4px;">0</div>
+        <small style="color: #155724;">Visibles en el catálogo</small>
+      </div>
+
+      <div onclick="filtrarPorEstado('rechazada')" style="background: #fdf2f2; border: 2px solid #dc3545; border-radius: 12px; padding: 1rem 1.25rem; cursor: pointer;">
+        <div style="font-size: 0.85rem; font-weight: 700; color: #721c24;">❌ RECHAZADAS</div>
+        <div id="count-rechazadas" style="font-size: 1.9rem; font-weight: 900; color: #721c24; line-height: 1.2; margin-top: 4px;">0</div>
+        <small style="color: #721c24;">Bloqueadas por seguridad</small>
+      </div>
+    </div>
+
+    <!-- BOTONES DE FILTRO -->
+    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid var(--borde); padding-bottom: 1rem;">
+      <button type="button" id="tab-pendiente" onclick="filtrarPorEstado('pendiente')" class="btn" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">
+        ⏳ Pendientes de verificar
+      </button>
+      <button type="button" id="tab-todas" onclick="filtrarPorEstado('todas')" class="btn btn-sec" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">
+        📋 Todas las propiedades
+      </button>
+      <button type="button" id="tab-aprobada" onclick="filtrarPorEstado('aprobada')" class="btn btn-sec" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">
+        ✅ Aprobadas
+      </button>
+      <button type="button" id="tab-rechazada" onclick="filtrarPorEstado('rechazada')" class="btn btn-sec" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">
+        ❌ Rechazadas
+      </button>
+    </div>
+
+    <!-- MENSAJE DE FEEDBACK -->
+    <div id="mensaje-admin"></div>
+
+    <!-- LISTADO DE PROPIEDADES PARA AUDITAR -->
+    <div id="contenedor-admin-propiedades" style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <p style="color: var(--gris);">Cargando solicitudes de verificación...</p>
+    </div>
+  </main>
+
+  <!-- MODAL PARA RECHAZAR CON MOTIVO -->
+  <div id="modalRechazo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: #fff; padding: 1.8rem; border-radius: 12px; width: 92%; max-width: 480px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+      <h3 style="margin-top: 0; margin-bottom: 0.5rem; color: #c62828;">❌ Rechazar Propiedad</h3>
+      <p style="font-size: 0.9rem; color: var(--gris); margin-bottom: 1rem;">
+        Indicá el motivo por el cual no se aprueba la propiedad (el anfitrión verá este mensaje en su panel):
+      </p>
+
+      <input type="hidden" id="rechazo_id_propiedad">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.8rem;">
+        <button type="button" onclick="usarMotivoRapido('El comprobante de titularidad no coincide con el nombre o DNI del usuario.')" style="font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; background: #f8f9fa; cursor: pointer;">
+          Titular no coincide con DNI
+        </button>
+        <button type="button" onclick="usarMotivoRapido('La foto de verificación no muestra el cartel manuscrito con la fecha de hoy en la propiedad.')" style="font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; background: #f8f9fa; cursor: pointer;">
+          Falta cartel con fecha real
+        </button>
+        <button type="button" onclick="usarMotivoRapido('El documento subido es ilegible o no corresponde a un impuesto/escritura válida.')" style="font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; background: #f8f9fa; cursor: pointer;">
+          Comprobante ilegible/inválido
+        </button>
+      </div>
+
+      <textarea id="rechazo_motivo" rows="3" placeholder="Escribí el motivo del rechazo..." style="width: 100%; margin-bottom: 1.2rem; background: #fff;"></textarea>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" onclick="cerrarModalRechazo()" class="btn btn-sec" style="padding: 0.55rem 1.1rem;">Cancelar</button>
+        <button type="button" onclick="confirmarRechazo()" class="btn" style="background: #dc3545; padding: 0.55rem 1.2rem;">Confirmar Rechazo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VISOR DE IMAGEN / DOCUMENTO EN GRANDE -->
+  <div id="modalVisor" onclick="cerrarVisor()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.82); z-index: 1100; align-items: center; justify-content: center; padding: 20px;">
+    <div onclick="event.stopPropagation()" style="background: #fff; padding: 1rem; border-radius: 12px; max-width: 820px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+      <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee;">
+        <strong id="tituloVisor" style="color: #1d2433;">Documento de verificación</strong>
+        <button type="button" onclick="cerrarVisor()" style="background: #dc3545; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-weight: bold; cursor: pointer;">✕ Cerrar</button>
+      </div>
+      <div style="width: 100%; overflow: auto; text-align: center;">
+        <img id="imgVisorGrande" src="" alt="Documento" style="max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 6px;">
+      </div>
+    </div>
+  </div>
+
+  <script src="js/session.js?v=6"></script>
+  <script>
+    let todasLasPropiedades = [];
+    let filtroActual = 'pendiente';
+
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarPropiedadesAdmin(true);
+    });
+
+    function cargarPropiedadesAdmin(primeraCarga = false) {
+      fetch('admin-propiedades?t=' + new Date().getTime())
+        .then(res => {
+          if (res.status === 401) {
+            window.location.href = 'login.html?required=1';
+            throw new Error('No autorizado');
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (!Array.isArray(data)) return;
+          todasLasPropiedades = data;
+
+          const pendientes = data.filter(p => (p.estadoVerificacion || 'pendiente') === 'pendiente').length;
+          const aprobadas = data.filter(p => p.estadoVerificacion === 'aprobada').length;
+          const rechazadas = data.filter(p => p.estadoVerificacion === 'rechazada').length;
+
+          document.getElementById('count-pendientes').innerText = pendientes;
+          document.getElementById('count-aprobadas').innerText = aprobadas;
+          document.getElementById('count-rechazadas').innerText = rechazadas;
+
+          // Si en la primera carga no hay ninguna pendiente, mostramos todas para que el admin vea el listado completo
+          if (primeraCarga && pendientes === 0) {
+            filtrarPorEstado('todas');
+          } else {
+            renderizarLista();
+          }
+        })
+        .catch(err => {
+          console.error("Error cargando panel admin:", err);
+          document.getElementById('contenedor-admin-propiedades').innerHTML =
+            '<div class="alerta alerta-error">No se pudieron cargar las propiedades. Asegurate de haber iniciado sesión.</div>';
+        });
+    }
+
+    function filtrarPorEstado(estado) {
+      filtroActual = estado;
+      ['pendiente', 'todas', 'aprobada', 'rechazada'].forEach(tab => {
+        const btn = document.getElementById('tab-' + tab);
+        if (btn) {
+          btn.className = (tab === estado) ? 'btn' : 'btn btn-sec';
+        }
+      });
+      renderizarLista();
+    }
+
+    function renderizarLista() {
+      const contenedor = document.getElementById('contenedor-admin-propiedades');
+      const filtradas = filtroActual === 'todas'
+        ? todasLasPropiedades
+        : todasLasPropiedades.filter(p => (p.estadoVerificacion || 'pendiente') === filtroActual);
+
+      if (filtradas.length === 0) {
+        let textoVacio = 'No hay propiedades en esta categoría.';
+        if (filtroActual === 'pendiente') {
+          textoVacio = '🎉 ¡Todo al día! No hay propiedades pendientes de verificación en este momento.';
+        }
+        contenedor.innerHTML = `<div class="alerta" style="background: #fff; border: 1px solid var(--borde); text-align: center; padding: 2rem;">${textoVacio}</div>`;
+        return;
+      }
+
+      contenedor.innerHTML = '';
+
+      filtradas.forEach(prop => {
+        const estado = prop.estadoVerificacion || 'pendiente';
+        let badgeEstado = '';
+        let colorBordeIzq = '#ffc107';
+
+        if (estado === 'aprobada') {
+          colorBordeIzq = '#28a745';
+          badgeEstado = `<span style="background: #28a745; color: #fff; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 800;">✅ DADA DE ALTA (APROBADA)</span>`;
+        } else if (estado === 'rechazada') {
+          colorBordeIzq = '#dc3545';
+          badgeEstado = `<span style="background: #dc3545; color: #fff; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 800;">❌ RECHAZADA</span>`;
+        } else {
+          colorBordeIzq = '#ffc107';
+          badgeEstado = `<span style="background: #ffc107; color: #222; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 800;">⏳ PENDIENTE DE VERIFICACIÓN</span>`;
+        }
+
+        const pisoTexto = (prop.piso && prop.piso.trim() !== '' && prop.piso !== '0') ? ` (${prop.piso})` : '';
+
+        // Datos del dueño
+        const nombreDueno = (prop.nombreVendedor && prop.nombreVendedor.trim() !== '') ? prop.nombreVendedor : 'Sin nombre registrado';
+        const dniDueno = (prop.dniVendedor && prop.dniVendedor.trim() !== '') ? prop.dniVendedor : 'No especificado';
+        const mailDueno = (prop.mailVendedor && prop.mailVendedor.trim() !== '') ? prop.mailVendedor : 'No especificado';
+        const telDueno = (prop.telVendedor && prop.telVendedor.trim() !== '') ? prop.telVendedor : 'No especificado';
+        const inicialDueno = nombreDueno.charAt(0).toUpperCase();
+
+        // Avatar fijo de 42x42px del dueño
+        let avatarDuenoHtml = '';
+        const estiloCirculoDueno = "width: 42px; height: 42px; min-width: 42px; max-width: 42px; min-height: 42px; max-height: 42px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; border: 2px solid #e0603a; background: #e0603a; color: #fff; font-weight: 800; font-size: 1rem; flex-shrink: 0;";
+        const estiloImgDueno = "width: 42px !important; height: 42px !important; min-width: 42px !important; max-width: 42px !important; min-height: 42px !important; max-height: 42px !important; object-fit: cover !important; border-radius: 50% !important; display: block;";
+
+        if (prop.fotoPerfilVendedor && prop.fotoPerfilVendedor.trim() !== '') {
+          const urlFotoDueno = 'uploads/' + encodeURI(prop.fotoPerfilVendedor.trim());
+          avatarDuenoHtml = `
+            <span style="${estiloCirculoDueno} background: #fff;">
+              <img src="${urlFotoDueno}" width="42" height="42" alt="Dueño" style="${estiloImgDueno}" onerror="this.style.display='none'; this.parentElement.style.background='#e0603a'; this.nextElementSibling.style.display='inline';">
+              <span style="display:none; color:#fff;">${inicialDueno}</span>
+            </span>
+          `;
+        } else {
+          avatarDuenoHtml = `<span style="${estiloCirculoDueno}">${inicialDueno}</span>`;
+        }
+
+        // 1. Comprobante de titularidad
+        let htmlComprobante = '';
+        if (prop.comprobanteTitularidad && prop.comprobanteTitularidad.trim() !== '') {
+          const compUrl = 'uploads/' + encodeURI(prop.comprobanteTitularidad.trim());
+          const esPdf = prop.comprobanteTitularidad.toLowerCase().endsWith('.pdf');
+          const miniaturaComp = esPdf
+            ? `<div style="width: 100%; height: 130px; background: #f1f3f5; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #495057; margin-bottom: 8px;">📄 Documento PDF</div>`
+            : `<div onclick="abrirVisor('${compUrl}', 'Comprobante de Titularidad — ${prop.calle} ${prop.altura}')" style="width: 100%; height: 130px; max-height: 130px; overflow: hidden; border-radius: 8px; background: #eee; margin-bottom: 8px; cursor: pointer; border: 1px solid #ddd;">
+                 <img src="${compUrl}" alt="Comprobante" style="width: 100% !important; height: 130px !important; max-height: 130px !important; object-fit: cover !important; display: block;">
+               </div>`;
+
+          htmlComprobante = `
+            ${miniaturaComp}
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              ${!esPdf ? `<button type="button" onclick="abrirVisor('${compUrl}', 'Comprobante de Titularidad — ${prop.calle} ${prop.altura}')" style="background: #0d6efd; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">🔍 Ampliar Comprobante</button>` : ''}
+              <a href="${compUrl}" target="_blank" style="background: #495057; color: #fff; text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">↗ Abrir archivo original</a>
+            </div>
+          `;
+        } else {
+          htmlComprobante = `<div style="padding: 16px; background: #fff3cd; color: #856404; border-radius: 8px; font-size: 0.85rem;">⚠️ Sin comprobante adjunto (propiedad de prueba anterior).</div>`;
+        }
+
+        // 2. Foto de verificación en tiempo real (cartel con fecha)
+        let htmlFotoVerif = '';
+        if (prop.fotoVerificacion && prop.fotoVerificacion.trim() !== '') {
+          const fotoVUrl = 'uploads/' + encodeURI(prop.fotoVerificacion.trim());
+          htmlFotoVerif = `
+            <div onclick="abrirVisor('${fotoVUrl}', 'Foto de Verificación con Fecha — ${prop.calle} ${prop.altura}')" style="width: 100%; height: 130px; max-height: 130px; overflow: hidden; border-radius: 8px; background: #eee; margin-bottom: 8px; cursor: pointer; border: 1px solid #ddd;">
+              <img src="${fotoVUrl}" alt="Foto verificación" style="width: 100% !important; height: 130px !important; max-height: 130px !important; object-fit: cover !important; display: block;">
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" onclick="abrirVisor('${fotoVUrl}', 'Foto de Verificación con Fecha — ${prop.calle} ${prop.altura}')" style="background: #0d6efd; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">🔍 Ampliar Foto con Cartel</button>
+              <a href="${fotoVUrl}" target="_blank" style="background: #495057; color: #fff; text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">↗ Abrir original</a>
+            </div>
+          `;
+        } else {
+          htmlFotoVerif = `<div style="padding: 16px; background: #fff3cd; color: #856404; border-radius: 8px; font-size: 0.85rem;">⚠️ Sin foto de verificación adjunta.</div>`;
+        }
+
+        // 3. Miniaturas de la galería del anuncio (fijas en 64x64px)
+        let galeriaHtml = '';
+        if (prop.imagenes && prop.imagenes.length > 0) {
+          galeriaHtml = `<div style="margin-top: 12px;"><strong style="font-size: 0.82rem; color: #555; display: block; margin-bottom: 6px;">🖼️ Fotos de la galería del anuncio (${prop.imagenes.length}):</strong><div style="display: flex; gap: 8px; flex-wrap: wrap;">`;
+          prop.imagenes.forEach(imgNombre => {
+            const urlGal = 'uploads/' + encodeURI(imgNombre);
+            galeriaHtml += `
+              <div onclick="abrirVisor('${urlGal}', 'Foto del anuncio — ${prop.calle} ${prop.altura}')" style="width: 64px; height: 64px; min-width: 64px; max-width: 64px; min-height: 64px; max-height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid #ccc; cursor: pointer; background: #eee;">
+                <img src="${urlGal}" width="64" height="64" alt="Galería" style="width: 64px !important; height: 64px !important; max-width: 64px !important; max-height: 64px !important; object-fit: cover !important; display: block;">
+              </div>
+            `;
+          });
+          galeriaHtml += `</div></div>`;
+        }
+
+        // Motivo de rechazo si fue rechazada
+        let motivoRechazoHtml = '';
+        if (estado === 'rechazada' && prop.motivoRechazo) {
+          motivoRechazoHtml = `
+            <div style="background: #ffebee; color: #c62828; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; margin-top: 12px; border: 1px solid #f5c2c7;">
+              <strong>Motivo del rechazo registrado:</strong> ${prop.motivoRechazo}
+            </div>
+          `;
+        }
+
+        // Botones de acción según estado
+        let botonesAccion = '';
+        if (estado === 'pendiente') {
+          botonesAccion = `
+            <button type="button" onclick="abrirModalRechazo(${prop.idPropiedad})" class="btn" style="background: #dc3545; padding: 0.65rem 1.2rem;">
+              ❌ Rechazar
+            </button>
+            <button type="button" onclick="cambiarEstadoPropiedad(${prop.idPropiedad}, 'aprobar')" class="btn" style="background: #28a745; padding: 0.65rem 1.4rem;">
+              ✅ Verificar y Dar de Alta
+            </button>
+          `;
+        } else if (estado === 'aprobada') {
+          botonesAccion = `
+            <button type="button" onclick="cambiarEstadoPropiedad(${prop.idPropiedad}, 'pendiente')" class="btn btn-sec" style="padding: 0.55rem 1rem; font-size: 0.88rem;">
+              ⏸️ Pausar / Volver a Pendiente
+            </button>
+            <button type="button" onclick="abrirModalRechazo(${prop.idPropiedad})" class="btn" style="background: #dc3545; padding: 0.55rem 1rem; font-size: 0.88rem;">
+              ❌ Dar de baja (Rechazar)
+            </button>
+          `;
+        } else {
+          botonesAccion = `
+            <button type="button" onclick="cambiarEstadoPropiedad(${prop.idPropiedad}, 'aprobar')" class="btn" style="background: #28a745; padding: 0.55rem 1.2rem; font-size: 0.9rem;">
+              ✅ Aprobar y Dar de Alta igualmente
+            </button>
+          `;
+        }
+
+        const tarjeta = document.createElement('div');
+        tarjeta.style.background = '#ffffff';
+        tarjeta.style.border = '1px solid var(--borde)';
+        tarjeta.style.borderLeft = `6px solid ${colorBordeIzq}`;
+        tarjeta.style.borderRadius = '12px';
+        tarjeta.style.padding = '1.4rem';
+        tarjeta.style.boxShadow = 'var(--sombra)';
+
+        tarjeta.innerHTML = `
+          <!-- Cabecera de la propiedad -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 14px;">
+            <div>
+              <div style="font-size: 0.8rem; color: var(--gris); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">
+                Propiedad #${prop.idPropiedad} • ${prop.ciudad}, ${prop.provincia}
+              </div>
+              <h2 style="margin: 2px 0 0 0; font-size: 1.3rem; color: var(--tinta);">
+                📍 ${prop.calle} ${prop.altura}${pisoTexto}
+              </h2>
+            </div>
+            <div>${badgeEstado}</div>
+          </div>
+
+          <!-- Bloque 1: Datos del dueño a contrastar -->
+          <div style="background: #f5f3ee; border: 1px solid #e2ddd2; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;">
+            <div style="font-size: 0.78rem; font-weight: 800; color: #e0603a; text-transform: uppercase; margin-bottom: 8px;">
+              👤 Datos del Propietario / Anfitrión (Verificar que coincidan con la titularidad)
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              ${avatarDuenoHtml}
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px 20px; flex: 1; font-size: 0.9rem;">
+                <div><strong>Nombre:</strong> ${nombreDueno}</div>
+                <div><strong>DNI:</strong> <span style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #ccc; font-weight: 700;">${dniDueno}</span></div>
+                <div><strong>Mail:</strong> ${mailDueno}</div>
+                <div><strong>Teléfono:</strong> ${telDueno}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque 2: Documentación de Seguridad Anti-Fraude -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 14px;">
+            <div style="border: 1px solid #dee2e6; border-radius: 10px; padding: 12px; background: #fafafa;">
+              <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: #1d2433;">
+                1. 📄 Comprobante de Titularidad
+              </div>
+              <p style="font-size: 0.78rem; color: var(--gris); margin-bottom: 8px;">
+                Impuesto, servicio o escritura a nombre del dueño.
+              </p>
+              ${htmlComprobante}
+            </div>
+
+            <div style="border: 1px solid #dee2e6; border-radius: 10px; padding: 12px; background: #fafafa;">
+              <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: #1d2433;">
+                2. 📸 Foto de Verificación en Tiempo Real
+              </div>
+              <p style="font-size: 0.78rem; color: var(--gris); margin-bottom: 8px;">
+                Foto del interior/exterior con cartel y fecha actual.
+              </p>
+              ${htmlFotoVerif}
+            </div>
+          </div>
+
+          <!-- Bloque 3: Detalles del anuncio -->
+          <div style="font-size: 0.9rem; color: #444; background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px 14px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+              <span><strong>Precio/noche:</strong> $${Number(prop.precioPorNoche).toLocaleString('es-AR')}</span>
+              <span><strong>Capacidad:</strong> ${prop.cantPersonas} personas</span>
+              <span><strong>Superficie:</strong> ${prop.metrosCuadrados || '-'} m²</span>
+              <span><strong>Seña:</strong> ${prop.porcentajeSena}%</span>
+              <span><strong>Alias/CBU:</strong> ${prop.aliasCbu}</span>
+            </div>
+            ${prop.descripcion ? `<p style="margin-top: 6px; color: var(--gris); font-size: 0.86rem;"><strong>Descripción:</strong> ${prop.descripcion}</p>` : ''}
+            ${galeriaHtml}
+          </div>
+
+          ${motivoRechazoHtml}
+
+          <!-- Acciones del Administrador -->
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; padding-top: 12px; border-top: 1px solid #eee;">
+            ${botonesAccion}
+          </div>
+        `;
+
+        contenedor.appendChild(tarjeta);
+      });
+    }
+
+    function cambiarEstadoPropiedad(idPropiedad, accion) {
+      const msgConfirm = accion === 'aprobar'
+        ? '¿Confirmás que verificaste la titularidad del dueño y querés DAR DE ALTA esta propiedad en el catálogo?'
+        : '¿Pasar esta propiedad nuevamente a estado pendiente de revisión?';
+
+      if (!confirm(msgConfirm)) return;
+
+      const params = new URLSearchParams();
+      params.append('accion', accion);
+      params.append('id', idPropiedad);
+
+      fetch('admin-propiedades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        const msgDiv = document.getElementById('mensaje-admin');
+        if (data.ok) {
+          msgDiv.innerHTML = `<div class="alerta alerta-ok">✅ ${data.mensaje}</div>`;
+          cargarPropiedadesAdmin(false);
+        } else {
+          msgDiv.innerHTML = `<div class="alerta alerta-error">❌ ${data.error || 'No se pudo actualizar la propiedad.'}</div>`;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(() => {
+        document.getElementById('mensaje-admin').innerHTML =
+          '<div class="alerta alerta-error">❌ Error de conexión con el servidor.</div>';
+      });
+    }
+
+    function abrirModalRechazo(idPropiedad) {
+      document.getElementById('rechazo_id_propiedad').value = idPropiedad;
+      document.getElementById('rechazo_motivo').value = '';
+      document.getElementById('modalRechazo').style.display = 'flex';
+    }
+
+    function cerrarModalRechazo() {
+      document.getElementById('modalRechazo').style.display = 'none';
+    }
+
+    function usarMotivoRapido(texto) {
+      document.getElementById('rechazo_motivo').value = texto;
+    }
+
+    function confirmarRechazo() {
+      const idPropiedad = document.getElementById('rechazo_id_propiedad').value;
+      const motivo = document.getElementById('rechazo_motivo').value.trim();
+
+      if (!motivo) {
+        alert('Por favor, ingresá el motivo del rechazo para que el anfitrión sepa qué corregir.');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append('accion', 'rechazar');
+      params.append('id', idPropiedad);
+      params.append('motivo', motivo);
+
+      fetch('admin-propiedades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        cerrarModalRechazo();
+        const msgDiv = document.getElementById('mensaje-admin');
+        if (data.ok) {
+          msgDiv.innerHTML = `<div class="alerta alerta-ok">✅ Propiedad #${idPropiedad} rechazada correctamente.</div>`;
+          cargarPropiedadesAdmin(false);
+        } else {
+          msgDiv.innerHTML = `<div class="alerta alerta-error">❌ ${data.error || 'No se pudo rechazar la propiedad.'}</div>`;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    function abrirVisor(url, titulo) {
+      document.getElementById('imgVisorGrande').src = url;
+      document.getElementById('tituloVisor').innerText = titulo || 'Documento de verificación';
+      document.getElementById('modalVisor').style.display = 'flex';
+    }
+
+    function cerrarVisor() {
+      document.getElementById('modalVisor').style.display = 'none';
+      document.getElementById('imgVisorGrande').src = '';
+    }
+  </script>
+</body>
+</html>

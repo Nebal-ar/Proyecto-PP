@@ -43,6 +43,12 @@ header.nav {
   letter-spacing: -0.02em;
 }
 .logo span { color: var(--brasa); }
+.nav-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
 .nav-links a {
   margin-left: 1.25rem;
   text-decoration: none;
@@ -51,6 +57,110 @@ header.nav {
   font-size: 0.95rem;
 }
 .nav-links a:hover { color: var(--tinta); }
+
+/* ---------- Chip de Perfil en la barra de navegación ---------- */
+.nav-links a.nav-perfil-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-left: 1.25rem;
+  padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+  background: var(--niebla);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  color: var(--tinta);
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+.nav-links a.nav-perfil-chip:hover {
+  border-color: var(--brasa);
+  background: #fff8f5;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(224, 96, 58, 0.12);
+}
+.nav-avatar-img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--brasa);
+  background: #fff;
+}
+.nav-avatar-placeholder {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brasa);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.nav-perfil-editar {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brasa);
+  background: rgba(224, 96, 58, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+/* ---------- Selector de Avatar (Registro y Perfil) ---------- */
+.avatar-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1rem 0 1.2rem;
+  padding: 1.1rem;
+  background: var(--niebla);
+  border: 1px dashed var(--borde);
+  border-radius: 12px;
+  text-align: center;
+}
+.avatar-preview-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--brasa);
+  background: var(--papel);
+  box-shadow: 0 4px 12px rgba(29, 36, 51, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+.avatar-preview-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-preview-default {
+  font-size: 2.4rem;
+  color: var(--gris);
+  user-select: none;
+}
+.btn-avatar-label {
+  display: inline-block;
+  margin: 0;
+  padding: 0.45rem 1rem;
+  background: var(--papel);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  color: var(--tinta);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-avatar-label:hover {
+  border-color: var(--brasa);
+  color: var(--brasa);
+}
 
 /* ---------- Contenedor ---------- */
 .contenedor { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }

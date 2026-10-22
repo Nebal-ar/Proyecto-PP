@@ -22,14 +22,37 @@ public class SessionServlet extends HttpServlet {
         HttpSession session = req.getSession(false);
 
         if (session != null && session.getAttribute("usuario") != null) {
-            // ¡Hay alguien conectado! Le pasamos los datos básicos al frontend
             Usuario u = (Usuario) session.getAttribute("usuario");
             
-            // MODIFICACIÓN: Agregamos "nombre" al JSON que viaja al frontend
-            out.print("{\"conectado\": true, \"esVendedor\": " + u.isVendedor() + ", \"esHuesped\": " + u.isHuesped() + ", \"nombre\": \"" + u.getNombre() + "\", \"usuario\": {\"idUsuario\": " + u.getIdUsuario() + "}}");
+            String nombre = u.getNombre() != null ? u.getNombre() : "";
+            String fotoPerfil = u.getFotoPerfil() != null ? u.getFotoPerfil() : "";
+            String mail = u.getMail() != null ? u.getMail() : "";
+            String dni = u.getDni() != null ? u.getDni() : "";
+            String tel = u.getTel() != null ? u.getTel() : "";
+
+            out.print("{"
+                + "\"conectado\": true, "
+                + "\"esAdmin\": " + u.isAdmin() + ", "
+                + "\"esVendedor\": " + u.isVendedor() + ", "
+                + "\"esHuesped\": " + u.isHuesped() + ", "
+                + "\"nombre\": \"" + escapar(nombre) + "\", "
+                + "\"fotoPerfil\": \"" + escapar(fotoPerfil) + "\", "
+                + "\"usuario\": {"
+                    + "\"idUsuario\": " + u.getIdUsuario() + ", "
+                    + "\"nombre\": \"" + escapar(nombre) + "\", "
+                    + "\"mail\": \"" + escapar(mail) + "\", "
+                    + "\"dni\": \"" + escapar(dni) + "\", "
+                    + "\"tel\": \"" + escapar(tel) + "\", "
+                    + "\"fotoPerfil\": \"" + escapar(fotoPerfil) + "\""
+                + "}"
+                + "}");
         } else {
-            // Nadie logueado
             out.print("{\"conectado\": false}");
         }
+    }
+
+    private String escapar(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
     }
 }

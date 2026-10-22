@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar contraseña — AlquiNow</title>
+  <link rel="stylesheet" href="css/estilos.css?v=6">
+</head>
+<body>
+
+  <header class="nav">
+    <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit;">Alqui<span>Now</span></a></div>
+    <nav class="nav-links">
+      <a href="index.html">Buscar</a>
+      <a href="login.html">Ingresar</a>
+      <a href="registro.html">Crear cuenta</a>
+    </nav>
+  </header>
+
+  <div class="form-box" style="max-width: 460px;">
+    <h1>Recuperar contraseña</h1>
+    <p class="sub" id="subtitulo-paso">Ingresá tu correo para recibir un código de verificación.</p>
+
+    <!-- Mensajes de estado -->
+    <div id="mensaje-recuperar"></div>
+
+    <!-- PASO 1: PEDIR CORREO Y ENVIAR CÓDIGO -->
+    <form id="formPaso1" onsubmit="enviarCodigo(event)">
+      <label for="mail">Correo electrónico de tu cuenta</label>
+      <input type="email" id="mail" name="mail" placeholder="tu@correo.com" required>
+
+      <button type="submit" id="btnEnviarCodigo" class="btn btn-block">Enviar código al correo</button>
+    </form>
+
+    <!-- PASO 2: VERIFICAR EL CÓDIGO DE 6 DÍGITOS -->
+    <form id="formPaso2" onsubmit="verificarCodigo(event)" style="display: none;">
+      <label for="mail_lectura">Correo electrónico</label>
+      <input type="email" id="mail_lectura" readonly style="background-color: #f0f0f0; color: #555;">
+
+      <label for="codigo">Código de verificación (6 dígitos)</label>
+      <input type="text" id="codigo" name="codigo" pattern="\d{6}" maxlength="6" placeholder="000000" title="Ingresá los 6 números que llegaron a tu mail" required autocomplete="off" style="letter-spacing: 6px; font-size: 1.25rem; text-align: center; font-weight: bold;">
+
+      <button type="submit" id="btnVerificarCodigo" class="btn btn-block">Verificar código</button>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.85rem;">
+        <button type="button" onclick="volverAlPaso1()" style="background: none; border: none; color: var(--gris); cursor: pointer; text-decoration: underline;">Cambiar correo</button>
+        <button type="button" id="btnReenviar" onclick="reenviarCodigo()" style="background: none; border: none; color: var(--brasa); font-weight: 600; cursor: pointer; text-decoration: underline;">Reenviar código</button>
+      </div>
+    </form>
+
+    <!-- PASO 3: ELEGIR LA NUEVA CONTRASEÑA -->
+    <form id="formPaso3" onsubmit="guardarNuevaContrasena(event)" style="display: none;">
+      <div style="background: #f5f3ee; border: 1px solid #e2ddd2; padding: 10px 12px; border-radius: 8px; margin-bottom: 1rem; font-size: 0.88rem;">
+        Cuenta verificada: <strong id="textoMailVerificado"></strong>
+      </div>
+
+      <label for="nueva_contrasena">Nueva contraseña</label>
+      <input type="password" id="nueva_contrasena" name="nueva_contrasena" pattern="(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}" title="Debe tener al menos 8 caracteres, incluir una mayúscula y un carácter especial (ej: ! @ # $ * . - _)" placeholder="Mínimo 8 caracteres" required>
+      <small style="display: block; color: var(--gris); font-size: 0.78rem; margin-top: 4px;">
+        Mínimo 8 caracteres, una mayúscula y un carácter especial (ej: ! @ # $ . - _).
+      </small>
+
+      <label for="confirmar_contrasena">Repetir nueva contraseña</label>
+      <input type="password" id="confirmar_contrasena" name="confirmar_contrasena" placeholder="Repetí tu nueva contraseña" required>
+
+      <button type="submit" id="btnCambiarPass" class="btn btn-block">Cambiar contraseña e ingresar</button>
+    </form>
+
+    <p style="text-align:center; margin-top:1.3rem; color:var(--gris); border-top: 1px solid var(--borde); padding-top: 1rem;">
+      ¿Recordaste tu contraseña? <a href="login.html" style="color:var(--brasa); font-weight: 600;">Volver a ingresar</a>
+    </p>
+  </div>
+
+  <script>
+    let correoActual = "";
+    let codigoActual = "";
+
+    function mostrarMensaje(tipo, texto) {
+      const div = document.getElementById("mensaje-recuperar");
+      const clase = tipo === "ok" ? "alerta-ok" : "alerta-error";
+      div.innerHTML = `<div class="alerta ${clase}">${texto}</div>`;
+    }
+
+    function enviarCodigo(event) {
+      event.preventDefault();
+      const mailInput = document.getElementById("mail").value.trim();
+      if (!mailInput) return;
+
+      const btn = document.getElementById("btnEnviarCodigo");
+      btn.disabled = true;
+      btn.innerText = "Enviando código...";
+      document.getElementById("mensaje-recuperar").innerHTML = "";
+
+      const params = new URLSearchParams();
+      params.append("accion", "enviar_codigo");
+      params.append("mail", mailInput);
+
+      fetch("recuperar-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) {
+          correoActual = mailInput;
+          document.getElementById("mail_lectura").value = correoActual;
+          document.getElementById("formPaso1").style.display = "none";
+          document.getElementById("formPaso2").style.display = "block";
+          document.getElementById("subtitulo-paso").innerText = "Revisá tu bandeja de entrada e ingresá el código de 6 dígitos.";
+          mostrarMensaje("ok", "✅ " + data.mensaje);
+          document.getElementById("codigo").focus();
+        } else {
+          mostrarMensaje("error", "❌ " + (data.error || "No se pudo enviar el código."));
+        }
+      })
+      .catch(() => {
+        mostrarMensaje("error", "❌ Error de conexión con el servidor.");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "Enviar código al correo";
+      });
+    }
+
+    function reenviarCodigo() {
+      if (!correoActual) return;
+      const btn = document.getElementById("btnReenviar");
+      btn.disabled = true;
+      btn.innerText = "Reenviando...";
+
+      const params = new URLSearchParams();
+      params.append("accion", "enviar_codigo");
+      params.append("mail", correoActual);
+
+      fetch("recuperar-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) {
+          mostrarMensaje("ok", "✅ Te enviamos un nuevo código a " + correoActual + ".");
+        } else {
+          mostrarMensaje("error", "❌ " + (data.error || "No se pudo reenviar el código."));
+        }
+      })
+      .catch(() => {
+        mostrarMensaje("error", "❌ Error al reenviar el código.");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "Reenviar código";
+      });
+    }
+
+    function volverAlPaso1() {
+      document.getElementById("formPaso2").style.display = "none";
+      document.getElementById("formPaso3").style.display = "none";
+      document.getElementById("formPaso1").style.display = "block";
+      document.getElementById("codigo").value = "";
+      document.getElementById("mensaje-recuperar").innerHTML = "";
+      document.getElementById("subtitulo-paso").innerText = "Ingresá tu correo para recibir un código de verificación.";
+    }
+
+    function verificarCodigo(event) {
+      event.preventDefault();
+      const codigoInput = document.getElementById("codigo").value.trim();
+      if (!codigoInput) return;
+
+      const btn = document.getElementById("btnVerificarCodigo");
+      btn.disabled = true;
+      btn.innerText = "Verificando...";
+
+      const params = new URLSearchParams();
+      params.append("accion", "verificar_codigo");
+      params.append("mail", correoActual);
+      params.append("codigo", codigoInput);
+
+      fetch("recuperar-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) {
+          codigoActual = codigoInput;
+          document.getElementById("textoMailVerificado").innerText = correoActual;
+          document.getElementById("formPaso2").style.display = "none";
+          document.getElementById("formPaso3").style.display = "block";
+          document.getElementById("subtitulo-paso").innerText = "Código verificado. Creá tu nueva contraseña.";
+          mostrarMensaje("ok", "✅ " + data.mensaje);
+          document.getElementById("nueva_contrasena").focus();
+        } else {
+          mostrarMensaje("error", "❌ " + (data.error || "Código incorrecto."));
+        }
+      })
+      .catch(() => {
+        mostrarMensaje("error", "❌ Error de conexión al verificar el código.");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "Verificar código";
+      });
+    }
+
+    function guardarNuevaContrasena(event) {
+      event.preventDefault();
+      const nuevaPass = document.getElementById("nueva_contrasena").value;
+      const confirmarPass = document.getElementById("confirmar_contrasena").value;
+
+      if (nuevaPass !== confirmarPass) {
+        mostrarMensaje("error", "❌ Las contraseñas ingresadas no coinciden.");
+        return;
+      }
+
+      const btn = document.getElementById("btnCambiarPass");
+      btn.disabled = true;
+      btn.innerText = "Actualizando contraseña...";
+
+      const params = new URLSearchParams();
+      params.append("accion", "cambiar_contrasena");
+      params.append("mail", correoActual);
+      params.append("codigo", codigoActual);
+      params.append("nueva_contrasena", nuevaPass);
+      params.append("confirmar_contrasena", confirmarPass);
+
+      fetch("recuperar-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok) {
+          window.location.href = "login.html?recuperado=1&mail=" + encodeURIComponent(correoActual);
+        } else {
+          mostrarMensaje("error", "❌ " + (data.error || "No se pudo cambiar la contraseña."));
+          btn.disabled = false;
+          btn.innerText = "Cambiar contraseña e ingresar";
+        }
+      })
+      .catch(() => {
+        mostrarMensaje("error", "❌ Error de conexión al actualizar la contraseña.");
+        btn.disabled = false;
+        btn.innerText = "Cambiar contraseña e ingresar";
+      });
+    }
+  </script>
+</body>
+</html>
